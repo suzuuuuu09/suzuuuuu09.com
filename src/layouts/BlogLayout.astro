@@ -1,0 +1,134 @@
+---
+import "@/styles/global.css";
+import katexStyles from "katex/dist/katex.min.css?url";
+import { css } from "styled-system/css";
+import FloatingBackground from "@/components/bases/FloatingBackground.astro";
+import Footer from "@/components/bases/Footer.astro";
+import Header from "@/components/bases/Header.astro";
+import GoogleAnalytics from "@/components/features/ga/GoogleAnalytics.astro";
+import { ContentContainer } from "@/components/shared/ContentContainer";
+import { Expand } from "@/components/shared/Expand";
+import { GA_TRACKING_ID, SITE_DESCRIPTION, SITE_TITLE } from "@/consts/base";
+
+interface Props {
+	title: string;
+	headings: {
+		depth: number;
+		slug: string;
+		text: string;
+	}[];
+	frontmatter?: {
+		title: string;
+		slug: string;
+		publishDate?: string | Date;
+		updateDate?: string | Date;
+		tags?: string[];
+		emoji?: string;
+		description?: string;
+	};
+	collection?: string;
+	hasMath?: boolean;
+}
+
+const {
+	title,
+	headings = [],
+	frontmatter,
+	collection = "blog",
+	hasMath = false,
+} = Astro.props;
+const siteTitle = `${frontmatter?.title || title} | ${SITE_TITLE}`;
+const description = frontmatter?.description || SITE_DESCRIPTION;
+// OG画像URL生成
+const ogImageUrl = new URL(
+	`/api/og/${collection}/${frontmatter?.slug || headings[0]?.slug || title}.png`,
+	Astro.site,
+);
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{siteTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={Astro.url} />
+    {hasMath && <link rel="stylesheet" href={katexStyles} />}
+
+    <!-- Dark mode initialization script -->
+    <script is:inline>
+      const theme =
+        localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    </script>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content={Astro.url} />
+    <meta property="og:title" content={frontmatter?.title || title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageUrl.toString()} />
+    <meta property="og:site_name" content={SITE_TITLE} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:title" content={frontmatter?.title || title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImageUrl.toString()} />
+
+    <GoogleAnalytics id={GA_TRACKING_ID} />
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://content.suzuuuuu09.com" />
+
+  </head>
+  <body class={css({ bg: "sz.bg", minH: "100vh", position: "relative" })}>
+    <FloatingBackground />
+    <Header />
+
+    <ContentContainer id="main-content" maxW="6xl">
+      <Expand>
+        <slot />
+      </Expand>
+    </ContentContainer>
+
+    <Footer />
+
+    <script>
+      import { initTwemoji } from "@/lib/twemoji";
+      import mediumZoom from "medium-zoom";
+      import { refreshTwitterEmbeds } from "@/lib/twitter-embeds";
+
+      const initEmbeds = () => {
+        try {
+          initTwemoji();
+        } catch {
+          // Twemoji の失敗で Twitter 埋め込みを止めない
+        }
+
+        void refreshTwitterEmbeds();
+      };
+
+      const initZoom = () => {
+        mediumZoom("[data-zoomable]", {
+          background: "rgba(0, 0, 0, 0.9)",
+          margin: 24,
+        });
+      };
+
+      initEmbeds();
+      initZoom();
+      window.addEventListener("themeChange", () => {
+        void refreshTwitterEmbeds();
+      });
+    </script>
+  </body>
+</html>

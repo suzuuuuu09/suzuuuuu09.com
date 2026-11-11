@@ -1,0 +1,39 @@
+---
+import { Flex, styled as s } from "styled-system/jsx";
+import ArticleInfo from "@/components/features/blog/ArticleInfo.astro";
+import TableOfContents from "@/components/features/blog/TableOfContents.astro";
+import { Expand } from "@/components/shared/Expand";
+import {
+	frontmatter,
+	getHeadings,
+	Content as PrivacyPolicyContent,
+	rawContent,
+} from "@/content/privacy-policy.md";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+// privacy-policy.mdからheadingsを取得
+const headings = getHeadings();
+
+// ArticleInfo用の情報
+const articleInfo = {
+	title: frontmatter.title,
+	publishDate: frontmatter.publishDate,
+	updateDate: frontmatter.updateDate,
+	content: rawContent(), // 読了時間計算用
+};
+---
+
+<BaseLayout title="Privacy Policy">
+  <Expand>
+    <ArticleInfo {...articleInfo} />
+    <Flex flexDir={{ base: "column", lg: "row" }} gap={{ base: "6", lg: "8" }}>
+      <s.article className="markdown-content" flex="1" minW="0">
+        <PrivacyPolicyContent />
+      </s.article>
+
+      <s.aside order={{ base: -1, lg: 1 }}>
+        <TableOfContents headings={headings} />
+      </s.aside>
+    </Flex>
+  </Expand>
+</BaseLayout>

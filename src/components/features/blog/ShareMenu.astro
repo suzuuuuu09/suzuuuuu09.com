@@ -1,0 +1,283 @@
+---
+import Icon from "@suzuuuuu09/astro-iconify";
+import { css } from "styled-system/css";
+import { HStack, styled as s } from "styled-system/jsx";
+import Panel from "@/components/ui/Panel";
+import { buildTwitterShareUrl } from "@/utils/share";
+
+interface Props {
+	title: string;
+	slug: string;
+	description?: string;
+	collection: string;
+	visible?: "lg" | "base" | "always";
+}
+
+const {
+	title,
+	slug,
+	description = "",
+	collection,
+	visible = "always",
+} = Astro.props;
+const baseUrl = Astro.site;
+const url = `${baseUrl}${collection}/${slug}`;
+const twitterShareUrl = buildTwitterShareUrl(title, url);
+const shareActionClass = css({
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	minW: "11",
+	minH: "11",
+	p: "0",
+	position: "relative",
+	borderWidth: "1px",
+	borderStyle: "solid",
+	borderColor: "sz.bg-on",
+	borderRadius: "md",
+	cursor: "pointer",
+	transition:
+		"border-color var(--durations-fast) var(--easings-out), color var(--durations-fast) var(--easings-out), transform var(--durations-faster) var(--easings-out)",
+	_hover: {
+		borderColor: "sz.primary",
+	},
+	_focusVisible: {
+		outline: "2px solid",
+		outlineColor: "sz.primary",
+		outlineOffset: "2px",
+	},
+	_active: {
+		transform: "translateY(1px)",
+	},
+});
+---
+
+<div data-share-menu>
+  <Panel title="Share" visible={visible}>
+    <HStack gap="4" px="4">
+	<s.a
+			href={twitterShareUrl}
+			target="_blank"
+			rel="noopener noreferrer"
+			aria-label="Share on Twitter"
+			data-share-action
+			className={shareActionClass}
+		>
+      <Icon
+        name="simple-icons:twitter"
+			aria-hidden="true"
+        style={{
+          color: "#1DA1F2",
+          width: "24px",
+          height: "24px",
+        }}
+      />
+    </s.a>
+    <s.button
+		type="button"
+      data-action="copy"
+			data-share-action
+			aria-label="URLをコピー"
+			className={`${shareActionClass} ${css({
+				_disabled: {
+					cursor: "progress",
+					opacity: "0.7",
+				},
+			})}`}
+    >
+      <Icon
+        name="mdi:content-copy"
+			width="24"
+			height="24"
+			aria-hidden="true"
+			class={`${css({
+          color: "sz.text.main",
+          width: "24px",
+          height: "24px",
+        })} copy-icon`}
+      />
+			<Icon
+				name="mdi:check"
+				width="24"
+				height="24"
+				aria-hidden="true"
+				class={`${css({
+					color: "sz.secondary",
+					width: "24px",
+					height: "24px",
+				})} copy-success-icon`}
+			/>
+			<Icon
+				name="mdi:alert-circle-outline"
+				width="24"
+				height="24"
+				aria-hidden="true"
+				class={`${css({
+					color: "callout-red",
+					width: "24px",
+					height: "24px",
+				})} copy-error-icon`}
+			/>
+	    </s.button>
+    <s.button
+		type="button"
+      data-action="share"
+			data-share-action
+			aria-label="Share this page"
+			className={shareActionClass}
+    >
+      <Icon
+        name="mdi:share-variant"
+			width="24"
+			height="24"
+			aria-hidden="true"
+			class={css({
+          color: "sz.text.main",
+          width: "24px",
+          height: "24px",
+        })}
+      />
+	    </s.button>
+    </HStack>
+		<span
+			data-copy-status
+			class={css({
+				position: "absolute",
+				w: "1px",
+				h: "1px",
+				p: "0",
+				m: "-1px",
+				overflow: "hidden",
+				clipPath: "inset(50%)",
+				whiteSpace: "nowrap",
+				border: "0",
+			})}
+			role="status"
+			aria-live="polite"
+			aria-atomic="true"
+		></span>
+  </Panel>
+</div>
+
+<script is:inline define:vars={{ title, description, url }}>
+  const root = document.currentScript?.previousElementSibling;
+	const copyButton = root?.querySelector('[data-action="copy"]');
+	const copyStatus = root?.querySelector("[data-copy-status]");
+	let copyResetTimer;
+
+	const setCopyState = (state, label, message) => {
+		if (!copyButton) return;
+
+		if (state) {
+			copyButton.setAttribute("data-copy-state", state);
+		} else {
+			copyButton.removeAttribute("data-copy-state");
+		}
+		if (state === "error") {
+			copyButton.setAttribute("aria-invalid", "true");
+		} else {
+			copyButton.removeAttribute("aria-invalid");
+		}
+		copyButton.setAttribute("aria-label", label);
+		copyButton.disabled = state === "loading";
+		if (copyStatus) copyStatus.textContent = message;
+	};
+
+	const resetCopyState = () => {
+		if (copyResetTimer) globalThis.clearTimeout(copyResetTimer);
+		copyResetTimer = undefined;
+		setCopyState(null, "URLをコピー", "");
+	};
+
+	copyButton?.addEventListener("mouseleave", () => {
+		if (copyButton.getAttribute("data-copy-state") !== "loading") {
+			resetCopyState();
+		}
+	});
+
+  root?.querySelectorAll("[data-action]").forEach((button) => {
+    button.addEventListener("click", async function () {
+      const action = this.getAttribute("data-action");
+
+      switch (action) {
+        case "copy":
+				if (copyResetTimer) globalThis.clearTimeout(copyResetTimer);
+				setCopyState("loading", "URLをコピー中", "URLをコピーしています");
+
+				try {
+					if (!navigator.clipboard?.writeText) {
+						throw new Error("Clipboard API is unavailable");
+					}
+					await navigator.clipboard.writeText(url);
+					setCopyState("success", "URLをコピーしました", "URLをコピーしました");
+				} catch {
+					setCopyState(
+						"error",
+						"URLをコピーできませんでした。もう一度お試しください",
+						"URLをコピーできませんでした。もう一度お試しください",
+					);
+				} finally {
+					copyResetTimer = globalThis.setTimeout(resetCopyState, 2500);
+				}
+          break;
+        case "share":
+          if (navigator.share) {
+            void navigator.share({
+              title,
+              text: description,
+              url,
+            }).catch(() => {});
+          }
+          break;
+      }
+    });
+  });
+</script>
+
+<style is:global>
+  [data-share-action] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  [data-action="copy"] .copy-success-icon {
+    display: none;
+  }
+
+  [data-action="copy"] .copy-error-icon {
+    display: none;
+  }
+
+  [data-action="copy"][data-copy-state="success"] .copy-icon {
+    display: none;
+  }
+
+  [data-action="copy"][data-copy-state="success"] .copy-success-icon {
+    display: block;
+  }
+
+  [data-action="copy"][data-copy-state="error"] .copy-icon,
+  [data-action="copy"][data-copy-state="error"] .copy-success-icon {
+    display: none;
+  }
+
+  [data-action="copy"][data-copy-state="error"] .copy-error-icon {
+    display: block;
+  }
+
+  [data-action="copy"][data-copy-state="error"] {
+    border-color: var(--colors-callout-red);
+    background-color: color-mix(
+      in srgb,
+      var(--colors-callout-red) 10%,
+      transparent
+    );
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-action="copy"] .copy-icon,
+    [data-action="copy"] .copy-success-icon {
+      transition: none;
+    }
+  }
+</style>

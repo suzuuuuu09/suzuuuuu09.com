@@ -1,0 +1,116 @@
+---
+import { styled as s } from "styled-system/jsx";
+import Panel from "@/components/ui/Panel";
+
+interface Props {
+	headings: {
+		depth: number;
+		slug: string;
+		text: string;
+	}[];
+}
+
+const { headings } = Astro.props;
+
+// 目次の見出し最大レベル
+const MAX_TOC_DEPTH = 4;
+
+// 目次の見出しレベルをフィルター
+const tocHeadings = headings.filter(
+	(heading) => heading.depth <= MAX_TOC_DEPTH,
+);
+
+// 基準レベルを計算（最初の見出しのレベルを基準とする）
+const baseLevel = tocHeadings.length > 0 ? tocHeadings[0].depth : 1;
+
+// 相対的なレベルを計算した見出し配列を作成
+const tocHeadingsWithRelativeLevel = tocHeadings.map((heading) => ({
+	...heading,
+	text: heading.text.replace(/^#+\s*/, ""), // headingの先頭にある#を削除
+	relativeDepth: Math.max(0, heading.depth - baseLevel), // 基準レベルからの相対値(最小0)
+}));
+---
+
+<Panel title="目次" collapsibleOnMobile>
+  <s.div
+    maxH={{ base: "300px", lg: "50vh" }}
+    overflowX="hidden"
+    overflowY="auto"
+  >
+    <s.ul listStyle="none" p="0" m="0">
+      {
+        tocHeadingsWithRelativeLevel.map((heading) => {
+          const marginLeft =
+            heading.relativeDepth === 0
+              ? "0"
+              : heading.relativeDepth === 1
+                ? "4"
+                : heading.relativeDepth === 2
+                  ? "8"
+                  : "12";
+
+          return (
+            <s.li listStyle="none" m="0" ml={marginLeft}>
+              <s.a
+                href={`#${heading.slug}`}
+                display="block"
+                px="2"
+                py="1.5"
+                rounded="md"
+                fontSize="sm"
+                color="sz.text.sub"
+                lineHeight="relaxed"
+                transition="all 0.2s"
+                data-slug={heading.slug}
+                _hover={{
+                  color: "sz.primary",
+                  bg: "sz.primary/10",
+                }}
+              >
+                {heading.text.replace(/\#\ /g, "")}
+              </s.a>
+            </s.li>
+          );
+        })
+      }
+    </s.ul>
+  </s.div>
+</Panel>
+
+<script>
+  const TOC_SELECTOR = "[data-collapsible-panel]";
+  const DESKTOP_QUERY = "(min-width: 769px)";
+
+  const setupTableOfContents = () => {
+    const panel = document.querySelector<HTMLDetailsElement>(TOC_SELECTOR);
+    if (!panel) return;
+
+    const desktop = window.matchMedia(DESKTOP_QUERY);
+    const summary = panel.querySelector("summary");
+
+    const syncPanelState = () => {
+      const isDesktop = desktop.matches;
+      panel.open = isDesktop;
+
+      if (summary) {
+        if (isDesktop) {
+          summary.setAttribute("aria-disabled", "true");
+        } else {
+          summary.removeAttribute("aria-disabled");
+        }
+      }
+    };
+
+    summary?.addEventListener("click", (event) => {
+      if (!desktop.matches) return;
+
+      event.preventDefault();
+      panel.open = true;
+    });
+
+    desktop.addEventListener("change", syncPanelState);
+    syncPanelState();
+  };
+
+  setupTableOfContents();
+</script>

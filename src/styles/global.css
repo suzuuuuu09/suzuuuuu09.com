@@ -1,0 +1,10 @@
+@layer reset, base, tokens, recipes, utilities;
+
+@import "./embed.css";
+@import "./callout.css";
+
+html:not([data-mermaid-theme-ready])
+	.markdown-content
+	picture:has(> source[id^="site-mermaid-dark-"]) {
+	visibility: hidden;
+}

@@ -1,0 +1,49 @@
+---
+import Icon from "@suzuuuuu09/astro-iconify";
+import { css } from "styled-system/css";
+import { styled as s, VStack } from "styled-system/jsx";
+import { getIconData } from "@/utils/icon";
+
+interface Props {
+	iconKey: string;
+}
+
+const { iconKey } = Astro.props as Props;
+
+const iconData = getIconData(iconKey);
+
+const iconName = iconData?.icon || iconKey;
+const displayName = iconData?.name || iconKey;
+const iconColor = iconData?.color;
+---
+
+<VStack
+  rounded="lg"
+  gap="2"
+  alignItems="center"
+  width="90px"
+  height="126px"
+>
+  <VStack
+    alignItems="center"
+    justifyContent="center"
+    height="68px"
+    p="2"
+  >
+    <Icon
+      name={iconName}
+      size={60}
+      class={iconColor ? undefined : css({ color: "sz.icon" })}
+      style={iconColor ? `color: ${iconColor}` : undefined}
+    />
+  </VStack>
+  <s.span
+    fontSize="base"
+    color="sz.text.main"
+    fontWeight="medium"
+    textAlign="center"
+    height="42px"
+  >
+    {displayName}
+  </s.span>
+</VStack>

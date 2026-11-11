@@ -1,0 +1,22 @@
+---
+import ProductListing from "@/components/features/product/ProductListing.astro";
+import { ENTRIES_PER_PAGE } from "@/components/shared/CollectionPagination";
+import { getProductPosts } from "@/lib/post";
+
+export async function getStaticPaths() {
+	const products = await getProductPosts();
+	const totalPages = Math.max(1, Math.ceil(products.length / ENTRIES_PER_PAGE));
+
+	return Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) => {
+		const currentPage = index + 2;
+		return {
+			params: { page: String(currentPage) },
+			props: { currentPage },
+		};
+	});
+}
+
+const { currentPage } = Astro.props;
+---
+
+<ProductListing currentPage={currentPage} />

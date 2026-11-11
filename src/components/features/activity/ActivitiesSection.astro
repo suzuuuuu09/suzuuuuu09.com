@@ -1,0 +1,13 @@
+---
+import { Icon } from "@suzuuuuu09/astro-iconify";
+import { SectionLayout } from "@/components/shared/SectionLayout";
+import SectionTitle from "@/components/shared/SectionTitle.astro";
+import ContributionMap from "./ContributionMap";
+---
+
+<SectionLayout id="activity">
+  <SectionTitle>Activity</SectionTitle>
+  <ContributionMap client:visible>
+    <Icon name="simple-icons:github" size={28} aria-hidden="true" />
+  </ContributionMap>
+</SectionLayout>

@@ -1,0 +1,108 @@
+---
+type ShapeType = "circle" | "square" | "triangle";
+
+interface Shape {
+	id: number;
+	type: ShapeType;
+	size: number;
+	x: number;
+	y: number;
+	color: string;
+	duration: number;
+	delay: number;
+}
+
+const shapesNumber = 15;
+const shapeTypes: ShapeType[] = ["circle", "square", "triangle"];
+const colors = [
+	"#3951e21a",
+	"#0072f81a",
+	"#0088f21a",
+	"#0096d41a",
+	"#00a0a91a",
+	"#00a87a1a",
+	"#968fc31a",
+];
+
+const shapes: Shape[] = Array.from({ length: shapesNumber }, (_, id) => ({
+	id,
+	type: shapeTypes[Math.floor(Math.random() * shapeTypes.length)],
+	size: Math.random() * 80 + 20,
+	x: Math.random() * 100,
+	y: Math.random() * 100,
+	color: colors[Math.floor(Math.random() * colors.length)],
+	duration: Math.random() * 200 + 100,
+	delay: Math.random() * -80,
+}));
+---
+
+<div aria-hidden="true" class="floating-background">
+  {
+    shapes.map((shape) => (
+      <span
+        class={`floating-background__shape floating-background__shape--${shape.type}`}
+        style={{
+          left: `${shape.x}%`,
+          top: `${shape.y}%`,
+          width: shape.type === "triangle" ? "0" : `${shape.size}px`,
+          height: shape.type === "triangle" ? "0" : `${shape.size}px`,
+          borderLeft:
+            shape.type === "triangle"
+              ? `${shape.size / 2}px solid transparent`
+              : undefined,
+          borderRight:
+            shape.type === "triangle"
+              ? `${shape.size / 2}px solid transparent`
+              : undefined,
+          borderBottom:
+            shape.type === "triangle" ? `${shape.size}px solid ${shape.color}` : undefined,
+          backgroundColor: shape.type === "triangle" ? "transparent" : shape.color,
+          borderRadius: shape.type === "circle" ? "50%" : "8px",
+          animationDuration: `${shape.duration / 4}s`,
+          animationDelay: `${shape.delay}s`,
+        }}
+      />
+    ))
+  }
+</div>
+
+<style>
+  .floating-background {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .floating-background__shape {
+    position: absolute;
+    transform: translate3d(0, 0, 0);
+    animation-name: floating-background-drift;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    will-change: transform;
+    opacity: 1;
+  }
+
+  .floating-background__shape--triangle {
+    filter: none;
+  }
+
+  @keyframes floating-background-drift {
+    from {
+      transform: translate3d(-12px, -8px, 0) scale(1);
+    }
+
+    to {
+      transform: translate3d(12px, 8px, 0) scale(1.08);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .floating-background__shape {
+      animation: none;
+    }
+  }
+</style>

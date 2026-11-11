@@ -1,0 +1,22 @@
+---
+import BlogListing from "@/components/features/blog/BlogListing.astro";
+import { ENTRIES_PER_PAGE } from "@/components/shared/CollectionPagination";
+import { getBlogPosts } from "@/lib/post";
+
+export async function getStaticPaths() {
+	const allPosts = await getBlogPosts();
+	const totalPages = Math.max(1, Math.ceil(allPosts.length / ENTRIES_PER_PAGE));
+
+	return Array.from({ length: totalPages }, (_, index) => {
+		const currentPage = index + 1;
+		return {
+			params: { page: String(currentPage) },
+			props: { currentPage },
+		};
+	});
+}
+
+const { currentPage } = Astro.props;
+---
+
+<BlogListing currentPage={currentPage} />

@@ -1,0 +1,123 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { cva } from "styled-system/css";
+
+type Props = {
+	variant?: "outline" | "subtle" | "ghost" | "tab";
+} & (
+	| (HTMLAttributes<"button"> & { href?: never })
+	| (Omit<HTMLAttributes<"a">, "type"> & {
+			href: string;
+			type?: never;
+			disabled?: never;
+	  })
+);
+
+const buttonStyles = cva({
+	base: {
+		display: "inline-flex",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: "2",
+		px: "5",
+		border: "1px solid",
+		borderColor: "sz.border",
+		borderRadius: "full",
+		bg: "transparent",
+		color: "sz.text.main",
+		fontFamily: "inherit",
+		fontSize: "md",
+		textDecoration: "none",
+		cursor: "pointer",
+		_focusVisible: {
+			outline: "2px solid",
+			outlineColor: "sz.primary",
+			outlineOffset: "2px",
+		},
+		_disabled: { opacity: "0.4", cursor: "not-allowed" },
+		"&[hidden]": { display: "none" },
+	},
+	variants: {
+		variant: {
+			outline: {
+				minH: "11",
+				minW: "24",
+				lineHeight: "1.5",
+				transition: "background-color 0.15s, border-color 0.15s, color 0.15s",
+				_hover: { bg: "sz.primary/10", borderColor: "sz.primary" },
+				_active: { bg: "sz.primary/20" },
+				_focusVisible: { outlineOffset: "3px" },
+				"&[aria-pressed='true'], &[aria-current='page']": {
+					borderColor: "sz.primary",
+					boxShadow: "inset 0 0 0 1px token(colors.sz.primary)",
+					color: "sz.primary",
+					fontWeight: "bold",
+				},
+			},
+			subtle: {
+				gap: "1.5",
+				minW: "38px",
+				h: "38px",
+				px: "2.5",
+				borderColor: "sz.border/80",
+				bg: "sz.bg-on/75",
+				fontSize: "xs",
+				transition:
+					"border-color 160ms ease, color 160ms ease, background-color 160ms ease",
+				_hover: {
+					borderColor: "sz.primary",
+					bg: "sz.primary/12",
+					color: "sz.primary",
+				},
+			},
+			ghost: {
+				display: "inline-grid",
+				w: "11",
+				h: "11",
+				px: "0",
+				placeItems: "center",
+				flexShrink: "0",
+				borderColor: "transparent",
+				borderRadius: "lg",
+				color: "sz.text.sub",
+				_hover: {
+					borderColor: "sz.border",
+					bg: "sz.bg-on",
+					color: "sz.text.main",
+				},
+			},
+			tab: {
+				minH: "10",
+				border: "0",
+				borderBottom: "2px solid",
+				borderBottomColor: "transparent",
+				borderRadius: "0",
+				color: "sz.text.sub",
+				fontWeight: "semibold",
+				whiteSpace: "nowrap",
+				_hover: { color: "sz.text.main" },
+				_focusVisible: { outlineOffset: "-2px" },
+				"&[aria-pressed='true'], &[aria-current='page']": {
+					borderBottomColor: "sz.primary",
+					color: "sz.text.main",
+				},
+				"@media (max-width: 640px)": { gap: "1", px: "2", fontSize: "xs" },
+			},
+		},
+	},
+});
+
+const {
+	href,
+	type,
+	variant = "outline",
+	class: className,
+	"class:list": classList,
+	...attributes
+} = Astro.props;
+const Tag = href === undefined ? "button" : "a";
+---
+
+<Tag {...attributes} href={href} type={href === undefined ? type ?? "button" : undefined} class:list={[buttonStyles({ variant }), className, classList]}>
+  <slot />
+</Tag>

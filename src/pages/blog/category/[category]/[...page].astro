@@ -1,0 +1,26 @@
+---
+import BlogListing from "@/components/features/blog/BlogListing.astro";
+import { ENTRIES_PER_PAGE } from "@/components/shared/CollectionPagination";
+import { categories } from "@/consts/category";
+import { getBlogPage } from "@/lib/blog-filter";
+import { getBlogPosts } from "@/lib/post";
+
+export async function getStaticPaths() {
+	const posts = await getBlogPosts();
+	return categories.flatMap(({ category }) => {
+		const { count } = getBlogPage(posts, category, 1, ENTRIES_PER_PAGE);
+		const totalPages = Math.max(1, Math.ceil(count / ENTRIES_PER_PAGE));
+		return Array.from({ length: totalPages + 1 }, (_, index) => ({
+			params: { category, page: index === 0 ? undefined : String(index) },
+			props: { category, currentPage: Math.max(1, index) },
+		}));
+	});
+}
+
+const { category, currentPage } = Astro.props;
+if (Astro.params.page === undefined) {
+	return Astro.redirect(`/blog/category/${category}/1/`);
+}
+---
+
+<BlogListing category={category} currentPage={currentPage} />

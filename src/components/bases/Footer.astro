@@ -1,0 +1,72 @@
+---
+import { HStack, styled as s, VStack } from "styled-system/jsx";
+---
+
+<s.footer
+  mx="auto"
+  my="10"
+  pt="4"
+  px="auto"
+  width="80%"
+  borderTopWidth="1"
+  borderTopColor="sz.border"
+  pt="4"
+>
+  <!-- Desktop: 3カラムレイアウト -->
+  <HStack
+    display={{ base: "none", md: "flex" }}
+    justifyContent="space-between"
+    alignItems="center"
+    fontSize="sm"
+  >
+    <s.span color="sz.text.sub" visibility="hidden" aria-hidden="true">
+      Privacy Policy
+    </s.span>
+    <s.span color="sz.text.sub">
+      Copyright © 2026 suzuuuuu09 All Rights Reserved.
+    </s.span>
+    <s.a
+      href="/privacy-policy"
+      color="sz.text.sub"
+      _hover={{ color: "sz.text.main", textDecoration: "underline" }}
+    >
+      Privacy Policy
+    </s.a>
+  </HStack>
+
+  <!-- Mobile: 縦並びレイアウト -->
+  <VStack
+    display={{ base: "flex", md: "none" }}
+    justifyContent="center"
+    alignItems="center"
+    gap="2"
+    fontSize="sm"
+  >
+    <s.span color="sz.text.sub" textAlign="center">
+      Copyright © 2026 suzuuuuu09 All Rights Reserved.
+    </s.span>
+    <s.a
+      href="/privacy-policy"
+      color="sz.text.sub"
+      _hover={{ color: "sz.text.main", textDecoration: "underline" }}
+    >
+      Privacy Policy
+    </s.a>
+  </VStack>
+</s.footer>
+
+<script is:inline>
+  const syncMermaidTheme = () => {
+    const media =
+      document.documentElement.dataset.theme === "dark" ? "all" : "not all";
+
+    document
+      .querySelectorAll('picture > source[id^="site-mermaid-dark-"]')
+      .forEach((source) => source.setAttribute("media", media));
+
+    document.documentElement.dataset.mermaidThemeReady = "true";
+  };
+
+  syncMermaidTheme();
+  globalThis.addEventListener("themeChange", syncMermaidTheme);
+</script>

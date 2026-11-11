@@ -1,0 +1,84 @@
+---
+import { css } from "styled-system/css";
+import BlogCard from "@/components/features/blog/BlogCard.astro";
+import CollectionPagination, {
+	ENTRIES_PER_PAGE,
+} from "@/components/shared/CollectionPagination";
+import { Expand } from "@/components/shared/Expand";
+import SectionTitle from "@/components/shared/SectionTitle.astro";
+import Button from "@/components/ui/Button.astro";
+import { Grid } from "@/components/ui/Grid";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getBlogPage } from "@/lib/blog-filter";
+import { getBlogPosts } from "@/lib/post";
+
+interface Props {
+	currentPage?: number;
+	category?: string;
+}
+
+const { currentPage = 1, category = "all" } = Astro.props;
+const allPosts = await getBlogPosts();
+const { posts, count: totalPosts } = getBlogPage(
+	allPosts,
+	category,
+	currentPage,
+	ENTRIES_PER_PAGE,
+);
+const basePath = category === "all" ? "/blog/" : `/blog/category/${category}/`;
+const filters = ["all", "tech", "idea", "work", "private"];
+---
+
+<BaseLayout title="Blogs">
+  <SectionTitle>Blogs</SectionTitle>
+  <div class={css({ w: "full" })} data-blog-listing data-page={currentPage} data-category={category}>
+  <div
+    data-blog-filters
+    role="navigation"
+    aria-label="ブログのカテゴリー"
+    class={css({ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "3", mb: "8" })}
+  >
+    {filters.map((filter) => (
+      <Button data-blog-filter={filter} href={filter === "all" ? "/blog/1/" : `/blog/category/${filter}/1/`} aria-current={filter === category ? "page" : undefined}>
+        {filter === "all" ? "All" : filter[0].toUpperCase() + filter.slice(1)}
+      </Button>
+    ))}
+  </div>
+  <Expand>
+    {
+      posts.length === 0 ? (
+        <p>{category === "all" ? "No blog posts found." : "このカテゴリーの記事はまだありません。"}</p>
+      ) : (
+        <>
+          <Grid variant="article" id="blog-results">
+            {posts.map((blog) => (
+              <BlogCard
+                blog={{
+                  id: blog.id,
+                  data: {
+                    ...blog.data,
+                    slug: blog.data.slug ?? blog.id,
+                    content: blog.body,
+                  },
+                }}
+                isDraft={!blog.data.isPublish}
+              />
+            ))}
+          </Grid>
+          {totalPosts > ENTRIES_PER_PAGE && (
+            <div data-blog-pagination>
+            <CollectionPagination
+              basePath={basePath}
+              firstPageHref={`${basePath}1/`}
+              count={totalPosts}
+              label="ブログ"
+              page={currentPage}
+            />
+            </div>
+          )}
+        </>
+      )
+    }
+  </Expand>
+  </div>
+</BaseLayout>

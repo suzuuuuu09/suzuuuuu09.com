@@ -1,0 +1,61 @@
+---
+import ProductCard from "@/components/features/product/ProductCard.astro";
+import CollectionPagination, {
+	ENTRIES_PER_PAGE,
+} from "@/components/shared/CollectionPagination";
+import { Expand } from "@/components/shared/Expand";
+import SectionTitle from "@/components/shared/SectionTitle.astro";
+import { Grid } from "@/components/ui/Grid";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getProductPosts } from "@/lib/post";
+
+interface Props {
+	currentPage?: number;
+}
+
+const { currentPage = 1 } = Astro.props;
+const allProducts = await getProductPosts();
+const totalProducts = allProducts.length;
+const products = allProducts.slice(
+	(currentPage - 1) * ENTRIES_PER_PAGE,
+	currentPage * ENTRIES_PER_PAGE,
+);
+---
+
+<BaseLayout title="Products">
+  <SectionTitle>Products</SectionTitle>
+  <Expand>
+    {
+      products.length === 0 ? (
+        <p>No products found.</p>
+      ) : (
+        <>
+          <Grid variant="article">
+            {products.map((product) => (
+              <ProductCard
+                product={{
+                  id: product.id,
+                  data: {
+                    ...product.data,
+                    content: product.body,
+                    thumbnail: product.data.thumbnail,
+                    carousel: product.data.carousel,
+                  },
+                }}
+                isDraft={!product.data.isPublish}
+              />
+            ))}
+          </Grid>
+          {totalProducts > ENTRIES_PER_PAGE && (
+            <CollectionPagination
+              basePath="/product/"
+              count={totalProducts}
+              label="プロダクト"
+              page={currentPage}
+            />
+          )}
+        </>
+      )
+    }
+  </Expand>
+</BaseLayout>

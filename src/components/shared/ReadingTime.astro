@@ -1,0 +1,21 @@
+---
+import { Icon } from "@suzuuuuu09/astro-iconify";
+import { getReadingTime } from "readtime-cjk";
+import { HStack, styled as s } from "styled-system/jsx";
+
+interface Props {
+	content: string;
+	gap: string;
+	iconSize?: number;
+}
+
+const { content, gap, iconSize = 16 } = Astro.props as Props;
+const readingTime = getReadingTime(content);
+---
+
+<HStack gap={gap}>
+  <Icon name="mdi:clock-outline" size={iconSize} />
+  <s.time color="sz.text.main" fontSize="sm">
+    {readingTime}
+  </s.time>
+</HStack>

@@ -1,0 +1,93 @@
+---
+import "@/styles/global.css";
+import { css } from "styled-system/css";
+import FloatingBackground from "@/components/bases/FloatingBackground.astro";
+import Footer from "@/components/bases/Footer.astro";
+import Header from "@/components/bases/Header.astro";
+import GoogleAnalytics from "@/components/features/ga/GoogleAnalytics.astro";
+import { ContentContainer } from "@/components/shared/ContentContainer";
+import { GA_TRACKING_ID, SITE_DESCRIPTION, SITE_TITLE } from "@/consts/base";
+
+interface Props {
+	title?: string;
+}
+
+const { title } = Astro.props;
+const siteTitle = title ? `${title} | ${SITE_TITLE}` : SITE_TITLE;
+
+// OG画像URL生成 - defaultコレクション用
+const ogImageUrl = new URL("/api/og/default.png", Astro.site);
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{siteTitle}</title>
+    <meta name="description" content={SITE_DESCRIPTION} />
+    <link rel="canonical" href={Astro.url} />
+
+    <!-- Dark mode initialization script -->
+    <script is:inline>
+      const theme =
+        localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    </script>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url} />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={SITE_DESCRIPTION} />
+    <meta property="og:image" content={ogImageUrl.toString()} />
+    <meta property="og:site_name" content={SITE_TITLE} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:title" content={siteTitle} />
+    <meta property="twitter:description" content={SITE_DESCRIPTION} />
+    <meta property="twitter:image" content={ogImageUrl.toString()} />
+
+    <GoogleAnalytics id={GA_TRACKING_ID} />
+
+  </head>
+  <body class={css({ bg: "sz.bg", minH: "100vh", position: "relative" })}>
+    <FloatingBackground />
+    <Header />
+
+    <ContentContainer id="main-content">
+      <slot />
+    </ContentContainer>
+
+    <Footer />
+  </body><script>
+    import { initTwemoji } from "@/lib/twemoji";
+
+    const scheduleTwemoji = () => {
+      const run = () => {
+        try {
+          initTwemoji();
+        } catch {
+          // Twemoji の失敗で初期表示を止めない
+        }
+      };
+
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(run, { timeout: 2000 });
+        return;
+      }
+
+      globalThis.setTimeout(run, 0);
+    };
+
+    scheduleTwemoji();
+  </script>
+</html>

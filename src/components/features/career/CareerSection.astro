@@ -1,0 +1,348 @@
+---
+import Icon from "@suzuuuuu09/astro-iconify";
+import dayjs from "dayjs";
+import { styled as s } from "styled-system/jsx";
+import { SectionLayout } from "@/components/shared/SectionLayout";
+import SectionTitle from "@/components/shared/SectionTitle.astro";
+import { CAREER_ITEMS } from "@/consts/career";
+import { getBlogPosts } from "@/lib/post";
+
+const blogPosts = await getBlogPosts();
+const formatCareerDate = (date: string | Date) => dayjs(date).format("YYYY.MM");
+
+const careerItems = [
+	...CAREER_ITEMS.map((item) => ({ ...item, href: undefined })),
+	...blogPosts
+		.filter((post) => post.data.isPublish)
+		.flatMap((post) =>
+			post.data.careerDate && post.data.careerTitle
+				? [
+						{
+							dates: {
+								start: post.data.careerDate,
+							},
+							title: post.data.careerTitle,
+							description: post.data.title,
+							href: `/blog/${post.data.slug}/`,
+						},
+					]
+				: [],
+		),
+].sort(
+	(a, b) => dayjs(a.dates.start).valueOf() - dayjs(b.dates.start).valueOf(),
+);
+---
+
+<SectionLayout>
+  <SectionTitle>Career</SectionTitle>
+  <s.ol className="career-list" color="sz.border">
+      {
+			careerItems.map((item) => (
+				<li class:list={["career-item", item.href && "career-item--article"]}>
+					<s.div
+						className="career-connector"
+						aria-hidden="true"
+						color={item.href ? "sz.primary" : "sz.border"}
+						bg={item.href ? "sz.primary" : "sz.border"}
+					/>
+					<s.div
+						className="career-marker"
+						aria-hidden="true"
+						color={item.href ? "sz.primary" : "sz.border"}
+						bg="sz.bg"
+					/>
+					<div class="career-content">
+						<s.div
+							className="career-date"
+							color="sz.text.sub"
+						>
+							<time datetime={dayjs(item.dates.start).format("YYYY-MM-DD")}>
+								{formatCareerDate(item.dates.start)}
+							</time>
+							{("end" in item.dates && item.dates.end) && (
+								<>
+									{" - "}
+									<time datetime={dayjs(item.dates.end).format("YYYY-MM-DD")}>
+										{formatCareerDate(item.dates.end)}
+									</time>
+								</>
+							)}
+						</s.div>
+						{
+							item.href ? (
+								<s.a
+									href={item.href}
+									className="career-link"
+									data-astro-prefetch
+								>
+									<s.h3 className="career-title" m="0" color="sz.primary">
+										{item.title}
+										<Icon
+											name="mdi:arrow-top-right"
+											size={16}
+											class="career-arrow"
+											aria-hidden="true"
+										/>
+									</s.h3>
+									<s.p className="career-supplement" m="0" color="sz.text.sub">
+										{item.description}
+									</s.p>
+								</s.a>
+							) : (
+								<>
+									<s.h3 className="career-title" m="0" color="sz.text.main">
+										{item.title}
+									</s.h3>
+									<s.p className="career-supplement" m="0" color="sz.text.sub">
+										{item.description}
+									</s.p>
+								</>
+							)
+						}
+					</div>
+				</li>
+			))
+		}
+  </s.ol>
+</SectionLayout>
+
+<style>
+  .career-list {
+    position: relative;
+    display: grid;
+    gap: 0.1rem;
+    width: min(100%, 68rem);
+    min-width: 0;
+    margin: 1.5rem auto 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .career-list::before {
+    position: absolute;
+    inset-block: 1.9rem;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: currentColor;
+    content: "";
+    opacity: 0.85;
+  }
+
+  .career-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 8rem minmax(0, 1fr);
+    align-items: center;
+    min-height: 6.7rem;
+  }
+
+  .career-marker {
+    position: relative;
+    z-index: 1;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    width: 1.45rem;
+    height: 1.45rem;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+  }
+
+  .career-marker::after {
+    position: absolute;
+    inset: 0.37rem;
+    border-radius: inherit;
+    background: currentColor;
+    content: "";
+  }
+
+  .career-item--article .career-marker {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .career-item--article .career-marker::after {
+    inset: 0.42rem;
+  }
+
+  .career-connector {
+    position: absolute;
+    top: 50%;
+    left: calc(50% + 0.85rem);
+    z-index: 0;
+    width: 3.25rem;
+    height: 1px;
+    transform: translateY(-50%);
+  }
+
+  .career-connector::after {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 0.22rem;
+    height: 0.22rem;
+    border-radius: 50%;
+    background: currentColor;
+    content: "";
+    transform: translateY(-50%);
+  }
+
+  .career-item:nth-of-type(even) .career-connector {
+    right: calc(50% + 0.85rem);
+    left: auto;
+  }
+
+  .career-item:nth-of-type(even) .career-connector::after {
+    right: auto;
+    left: 0;
+  }
+
+  .career-content {
+    grid-row: 1;
+    max-width: 25rem;
+    min-width: 0;
+    padding: 0.75rem 1.3rem;
+  }
+
+  .career-item:nth-of-type(odd) .career-content {
+    grid-column: 3;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .career-item:nth-of-type(even) .career-content {
+    grid-column: 1;
+    justify-self: end;
+    text-align: right;
+  }
+
+  .career-date {
+    display: block;
+    font-family: var(--moralerspace-neon);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .career-title {
+    margin: 0.35rem 0 0;
+    font-size: clamp(1rem, 1.75vw, 1.3rem);
+    font-weight: 700;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .career-link {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-top: 0.35rem;
+    text-decoration: none;
+    transition: opacity 160ms ease;
+  }
+
+  .career-link .career-title,
+  .career-link .career-supplement {
+    margin: 0;
+  }
+
+  .career-link:hover {
+    opacity: 0.78;
+  }
+
+  .career-arrow {
+    display: inline-block;
+    margin-left: 0.35rem;
+    vertical-align: 0.08em;
+  }
+
+  .career-link:focus-visible {
+    border-radius: 0.2rem;
+    outline: 2px solid currentColor;
+    outline-offset: 0.25rem;
+  }
+
+  .career-supplement {
+    margin-top: 0.25rem;
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 768px) {
+    .career-list {
+      margin-top: 0;
+      padding-left: 0.05rem;
+    }
+
+    .career-list::before {
+      inset-block: 0.7rem 1.7rem;
+      left: 0.8rem;
+    }
+
+    .career-item {
+      grid-template-columns: 1.6rem minmax(0, 1fr);
+      align-items: start;
+      min-height: 0;
+      padding-bottom: 1.8rem;
+    }
+
+    .career-marker {
+      grid-column: 1;
+      width: 1.2rem;
+      height: 1.2rem;
+      margin-top: 0.1rem;
+    }
+
+    .career-marker::after {
+      inset: 0.3rem;
+    }
+
+    .career-item--article .career-marker {
+      width: 1.3rem;
+      height: 1.3rem;
+    }
+
+    .career-item--article .career-marker::after {
+      inset: 0.34rem;
+    }
+
+    .career-connector {
+      display: none;
+    }
+
+    .career-content,
+    .career-item:nth-of-type(odd) .career-content,
+    .career-item:nth-of-type(even) .career-content {
+      grid-column: 2;
+      justify-self: stretch;
+      max-width: none;
+      padding: 0 0 0 0.85rem;
+      text-align: left;
+    }
+
+    .career-date {
+      font-size: 0.72rem;
+    }
+
+    .career-title {
+      margin-top: 0.28rem;
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    .career-link {
+      margin-top: 0.28rem;
+    }
+
+    .career-supplement {
+      margin-top: 0.2rem;
+      font-size: 0.84rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .career-link {
+      transition: none;
+    }
+  }
+</style>

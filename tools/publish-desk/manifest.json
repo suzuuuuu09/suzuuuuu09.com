@@ -1,0 +1,10 @@
+{
+	"id": "publish-desk",
+	"name": "Publish Desk",
+	"version": "0.1.0",
+	"minAppVersion": "1.0.0",
+	"description": "Astroコンテンツの公開作業をObsidianから管理します。",
+	"author": "suzuuuuu09",
+	"authorUrl": "https://suzuuuuu09.com",
+	"isDesktopOnly": true
+}

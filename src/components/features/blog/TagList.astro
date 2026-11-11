@@ -1,0 +1,59 @@
+---
+import { Flex } from "styled-system/jsx";
+import Tag from "@/components/ui/Tag.astro";
+
+interface Props {
+	tags?: string[];
+	omit?: boolean;
+}
+
+const { tags, omit = false } = Astro.props;
+const initialVisibleTags = omit && tags?.length ? 1 : 0;
+---
+
+{
+  tags && tags.length > 0 && (
+    <Flex
+      alignItems="center"
+      flexWrap="wrap"
+      justifyContent="inherit"
+      gap="2"
+      w="full"
+      maxW="full"
+      minW="0"
+      data-tag-list={omit ? "true" : undefined}
+    >
+      {omit ? (
+        <>
+          {tags.map((tag, index) => (
+            <Tag
+              useHashTag
+              name={tag}
+              dataTagItem
+              hidden={index >= initialVisibleTags}
+            />
+          ))}
+          {tags.length > initialVisibleTags && (
+            <Tag
+              name={`+${tags.length - initialVisibleTags}`}
+              dataTagOverflow
+            />
+          )}
+        </>
+      ) : (
+        <>
+          {tags.map((tag) => (
+            <Tag useHashTag name={tag} />
+          ))}
+        </>
+      )}
+    </Flex>
+  )
+}
+
+<script>
+	import { setupTagLists } from "@/scripts/tag-list";
+
+	setupTagLists();
+	window.addEventListener("resize", setupTagLists);
+</script>

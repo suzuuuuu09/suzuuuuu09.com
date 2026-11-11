@@ -1,0 +1,49 @@
+---
+import { Image } from "astro:assets";
+import { buildThumbnailUrl } from "@/lib/thumbnail";
+import { getThumbnailStyles } from "@/utils/thumbnail";
+
+interface Props {
+	thumbnailPath: string;
+	title: string;
+	type: "card" | "info";
+	loading: "eager" | "lazy";
+	fetchpriority?: "high" | "low" | "auto";
+}
+
+const {
+	thumbnailPath,
+	title,
+	type,
+	loading,
+	fetchpriority = "auto",
+} = Astro.props;
+
+const thumbnailUrl = buildThumbnailUrl(thumbnailPath);
+
+const styles = getThumbnailStyles(type);
+
+const imageSize =
+	type === "card" ? { width: 800, height: 450 } : { width: 1200, height: 630 };
+
+const responsiveImageProps = {
+	widths: [240, 360, 540, 720, imageSize.width],
+	sizes: "(max-width: 768px) calc(100vw - 3rem), 450px",
+};
+---
+
+{thumbnailUrl && (
+	<div class={styles.wrapper}>
+		<Image
+			src={thumbnailUrl}
+			alt={title}
+			width={imageSize.width}
+			height={imageSize.height}
+			{...(type === "card" ? responsiveImageProps : {})}
+			class={styles.image}
+			loading={loading}
+			fetchpriority={fetchpriority}
+			decoding="async"
+		/>
+	</div>
+)}

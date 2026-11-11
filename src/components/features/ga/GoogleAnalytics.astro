@@ -1,0 +1,32 @@
+---
+const isProd = import.meta.env.PROD;
+
+interface Props {
+	id: string;
+}
+
+const { id: gaTrackingId }: Props = Astro.props;
+---
+
+{
+  isProd && gaTrackingId ? (
+    <>
+      <script
+				is:inline
+        type="text/partytown"
+        async
+        src={`https://www.googletagmanager.com/gtag/js?id=${gaTrackingId}`}
+      />
+      <script
+				is:inline
+        type="text/partytown"
+        set:html={`
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '${gaTrackingId}');
+    `}
+      />
+    </>
+  ) : null
+}

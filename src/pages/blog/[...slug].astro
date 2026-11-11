@@ -1,0 +1,53 @@
+---
+import { render } from "astro:content";
+import ArticleInfo from "@/components/features/blog/ArticleInfo.astro";
+import ContentEntryBody from "@/components/shared/ContentEntryBody.astro";
+import BlogLayout from "@/layouts/BlogLayout.astro";
+import { containsMath } from "@/lib/math";
+import { getBlogPosts } from "@/lib/post";
+
+export async function getStaticPaths() {
+	const blogEntries = await getBlogPosts();
+	return blogEntries.map((entry) => ({
+		params: { slug: entry.data.slug },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+
+const { Content, headings } = await render(entry);
+const hasMath = containsMath(entry.body ?? "");
+
+const articleInfo = {
+	title: entry.data.title,
+	slug: entry.data.slug,
+	publishDate: entry.data.publishDate,
+	updateDate: entry.data.updateDate,
+	tags: entry.data.tags || [],
+	emoji: entry.data.emoji || "📝",
+	description: entry.data.description || "",
+	content: entry.body, // 読了時間計算用
+};
+---
+
+<BlogLayout
+  title={entry.data.title}
+  headings={headings}
+  frontmatter={articleInfo}
+  collection="blog"
+  hasMath={hasMath}
+>
+  <ArticleInfo {...articleInfo} />
+
+  <ContentEntryBody
+    collection="blog"
+    slug={entry.data.slug}
+    title={articleInfo.title}
+    description={articleInfo.description}
+    headings={headings}
+    isPublish={entry.data.isPublish}
+  >
+    <Content />
+  </ContentEntryBody>
+</BlogLayout>

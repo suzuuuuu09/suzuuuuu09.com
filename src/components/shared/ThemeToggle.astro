@@ -1,0 +1,71 @@
+---
+import { Icon } from "@suzuuuuu09/astro-iconify";
+import { css } from "styled-system/css";
+---
+
+<button
+  id="darkModeToggle"
+	aria-label="Theme Toggle Button"
+  class={css({
+    p: "2",
+    borderRadius: "md",
+    bg: "sz.bg-on",
+    border: "1px solid",
+    borderColor: "sz.border",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    display: "flex",
+    alignItems: "center",
+    gap: "2",
+    _hover: {
+      bg: "sz.bg-on.500",
+    },
+  })}
+>
+  <Icon
+    name="mdi:white-balance-sunny"
+    class="sun-icon"
+    width="20"
+    height="20"
+  />
+  <Icon name="mdi:moon-and-stars" class="moon-icon" width="20" height="20" />
+</button>
+
+<script>
+  import { toggleTheme } from "@/lib/theme";
+
+  const toggle = document.getElementById("darkModeToggle");
+
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      void toggleTheme(toggle);
+    });
+  }
+</script>
+
+<style is:global>
+  #darkModeToggle .sun-icon {
+    display: none;
+  }
+
+  #darkModeToggle .moon-icon {
+    display: block;
+  }
+
+  html[data-theme="dark"] #darkModeToggle .sun-icon {
+    display: block;
+  }
+
+  html[data-theme="dark"] #darkModeToggle .moon-icon {
+    display: none;
+  }
+
+  ::view-transition-old(root) {
+    animation: none;
+    opacity: 1;
+  }
+
+  ::view-transition-new(root) {
+    animation: none;
+  }
+</style>

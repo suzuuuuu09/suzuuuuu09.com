@@ -1,0 +1,24 @@
+---
+import { getSectionTitleStyles } from "@/utils/sectionTitle";
+
+interface Props {
+	level?: 1 | 2;
+}
+
+const sections = getSectionTitleStyles();
+const { level = 2 } = Astro.props;
+---
+
+<div class={sections.wrapper}>
+  {
+		level === 1 ? (
+			<h1 class={sections.title}>
+				<slot />
+			</h1>
+		) : (
+			<h2 class={sections.title}>
+				<slot />
+			</h2>
+		)
+	}
+</div>

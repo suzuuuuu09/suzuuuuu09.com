@@ -1,0 +1,33 @@
+---
+import { Image } from "astro:assets";
+import defaultAvatar from "@/assets/icon.svg";
+import { getAvatarClassName } from "@/utils/avatar";
+
+interface Props {
+	avatar?: ImageMetadata;
+	size?: number;
+	alt?: string;
+	square?: boolean;
+	objectFit?: "cover" | "contain" | "fill" | "none" | "scale-down";
+	border?: boolean;
+}
+
+const {
+	avatar = defaultAvatar,
+	size = 20,
+	alt = "suzuのあばたー",
+	square = false,
+	objectFit = "contain",
+	border = false,
+} = Astro.props;
+---
+
+<Image
+  src={avatar}
+  alt={alt}
+  width={size}
+  height={size}
+  loading="eager"
+	fetchpriority="high"
+  class={getAvatarClassName(size, border, square, objectFit)}
+/>

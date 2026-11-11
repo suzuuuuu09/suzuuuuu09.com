@@ -1,0 +1,74 @@
+---
+import Icon from "@suzuuuuu09/astro-iconify";
+import { styled as s } from "styled-system/jsx";
+import { getIconData } from "@/utils/icon";
+
+interface Props {
+	useHashTag?: boolean;
+	name: string;
+	dataTagItem?: boolean;
+	dataTagOverflow?: boolean;
+	hidden?: boolean;
+}
+
+const {
+	useHashTag = false,
+	name,
+	dataTagItem = false,
+	dataTagOverflow = false,
+	hidden = false,
+} = Astro.props;
+
+const iconData = getIconData(name);
+const hasSkillIcon = !!iconData;
+---
+
+<s.span
+  display="flex"
+  alignItems="center"
+  fontSize="xs"
+  color="sz.text.main"
+  bgColor="sz.primary/20"
+  fontWeight="medium"
+  rounded="full"
+  h="8"
+  minH="8"
+  maxW="full"
+  minW="0"
+  flexShrink="0"
+  px="2"
+  py="1"
+  gap="1"
+  data-tag-item={dataTagItem ? "" : undefined}
+  data-tag-overflow={dataTagOverflow ? "" : undefined}
+  hidden={hidden || undefined}
+>
+  {
+    useHashTag && (
+      <>
+        <s.div
+          display="inline-flex"
+          alignItems="center"
+          p="1"
+          rounded="full"
+          bgColor="sz.bg-on.100"
+          flexShrink="0"
+        >
+          {hasSkillIcon ? (
+            <Icon name={iconData!.icon} size={16} />
+          ) : (
+            <Icon name="mdi:tag" size={16} />
+          )}
+        </s.div>
+        <s.p whiteSpace="nowrap" flexShrink="0">#</s.p>
+      </>
+    )
+  }
+  <s.p
+    fontSize="xs"
+    minW="0"
+    whiteSpace="nowrap"
+    overflow="hidden"
+    textOverflow="ellipsis"
+  >{hasSkillIcon ? iconData!.name : name}</s.p>
+</s.span>

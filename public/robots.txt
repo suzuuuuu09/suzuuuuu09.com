@@ -1,0 +1,4 @@
+User-Agent: *
+Allow: /
+
+Sitemap: https://suzuuuuu09.com/sitemap-index.xml

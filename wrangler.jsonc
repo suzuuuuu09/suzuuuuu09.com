@@ -1,0 +1,21 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "v2-suzuuuuu09-com",
+	"main": "@astrojs/cloudflare/entrypoints/server",
+	"compatibility_date": "2026-05-28",
+	"workers_dev": true,
+	"kv_namespaces": [
+		{ "binding": "SESSION", "id": "64b46264e4324383a3332e9aeac5f78f" }
+	],
+	"previews": {
+		"kv_namespaces": [
+			{ "binding": "SESSION", "id": "64b46264e4324383a3332e9aeac5f78f" }
+		]
+	},
+	"routes": [{ "pattern": "suzuuuuu09.com", "custom_domain": true }],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": "./dist/client",
+		"not_found_handling": "none"
+	}
+}

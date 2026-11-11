@@ -1,0 +1,19 @@
+@layer base {
+	/* Link Card Styles */
+	.link-card .link-card-site {
+		color: #666;
+	}
+
+	/* モダンブラウザ向けの最適化 */
+	@supports (aspect-ratio: 12 / 7) {
+		.google-slides-container {
+			padding-bottom: 0;
+			height: auto;
+			aspect-ratio: 12 / 7;
+		}
+
+		.google-slides-container iframe {
+			position: static;
+		}
+	}
+}

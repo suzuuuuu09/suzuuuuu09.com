@@ -1,0 +1,42 @@
+---
+import { css } from "styled-system/css";
+import ProductCard from "@/components/features/product/ProductCard.astro";
+import { Expand } from "@/components/shared/Expand";
+import { SectionLayout } from "@/components/shared/SectionLayout";
+import SectionTitle from "@/components/shared/SectionTitle.astro";
+import Button from "@/components/ui/Button.astro";
+import { Grid } from "@/components/ui/Grid";
+import { HOME_SECTION_ENTRY_LIMIT } from "@/consts/base";
+import { getProductPosts } from "@/lib/post";
+
+const products = (await getProductPosts()).slice(0, HOME_SECTION_ENTRY_LIMIT);
+---
+
+<SectionLayout>
+  <SectionTitle>Recent Products</SectionTitle>
+  <Expand>
+    {
+      products.length === 0 ? (
+        <p>No products found.</p>
+      ) : (
+        <Grid variant="article">
+          {products.map((product) => (
+            <ProductCard
+              product={{
+                id: product.id,
+                data: {
+                  ...product.data,
+                  content: product.body,
+                },
+              }}
+              isDraft={!product.data.isPublish}
+            />
+          ))}
+        </Grid>
+      )
+    }
+  </Expand>
+  <div class={css({ display: "flex", justifyContent: "center", mt: "8" })}>
+    <Button href="/product/">プロダクト一覧へ</Button>
+  </div>
+</SectionLayout>

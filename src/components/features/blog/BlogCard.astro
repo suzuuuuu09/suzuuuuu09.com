@@ -1,0 +1,122 @@
+---
+import { Center, Flex, HStack, styled as s } from "styled-system/jsx";
+import Date from "@/components/shared/Date.astro";
+import ReadingTime from "@/components/shared/ReadingTime.astro";
+import { Card } from "@/components/ui/Card";
+import { categories } from "@/consts/category";
+import type { BlogCategory } from "@/types";
+import CategoryBadge from "./CategoryBadge";
+import TagList from "./TagList.astro";
+
+export interface Props {
+	blog: {
+		id: string;
+		data: {
+			title: string;
+			slug?: string;
+			emoji?: string;
+			tags?: string[];
+			category?: BlogCategory;
+			publishDate: Date;
+			content?: string;
+		};
+	};
+	isDraft?: boolean;
+}
+
+const { blog, isDraft = false } = Astro.props;
+
+const currentCategory = categories.find(
+	(cat) => cat.category === blog.data.category,
+);
+---
+
+<Card maxW="450px" isDraft={isDraft}>
+  <s.a
+    href={`/blog/${blog.data.slug ?? blog.id}/`}
+    display="flex"
+    direction="column"
+    h="full"
+    color="sz.text.main"
+    textDecoration="none"
+  >
+    <Flex
+      position="relative"
+      bgGradient="to-r"
+      gradientFrom="sz.primary/5"
+      gradientVia="sz.primary/10"
+      gradientTo="sz.primary/5"
+      p={{ base: "8", _sm: "6" }}
+      pb={{ base: "6", _sm: "4" }}
+      flex="1"
+      flexDir="column"
+    >
+      <!-- カードヘッダー：絵文字背景 -->
+
+      <s.div position="absolute" top="6" right="6" opacity="0.1">
+        <Center w="20" h="20" bg="sz.primary/10" borderRadius="full">
+          <s.div fontSize="3xl">
+            {currentCategory?.emoji || "📝"}
+          </s.div>
+        </Center>
+      </s.div>
+
+      <!-- メイン絵文字 -->
+      <s.div position="relative" z="10">
+        <Center
+          w="16"
+          h="16"
+          bg="sz.bg"
+          rounded="xl"
+          shadow="md"
+          transition="all 0.3s"
+          _groupHover={{ transform: "scale(1.1) rotate(3deg)" }}
+        >
+          <s.span fontSize="3xl">{blog.data.emoji || "📝"}</s.span>
+        </Center>
+      </s.div>
+
+      <s.h2
+        lineHeight="snug"
+        transition="colors 0.3s"
+        mb="3"
+        mt="4"
+        fontWeight="bold"
+        fontSize={{ base: "lg", _lg: "xl" }}
+        overflow="hidden"
+        overflowWrap="anywhere"
+        textOverflow="ellipsis"
+        lineClamp={{ base: "3", _lg: "2" }}
+        minW="0"
+        _groupHover={{ color: "sz.primary" }}
+      >
+        {blog.data.title}
+      </s.h2>
+
+      <!-- タグ -->
+      <Flex direction="column" flex="1" justify="space-between">
+        <HStack gap="2" mb="7" w="full" minW="0">
+          <TagList omit tags={blog.data.tags} />
+        </HStack>
+
+        <HStack
+          justify="space-between"
+          borderTopWidth="1px"
+          borderColor="sz.border/30"
+          pt="3"
+          gap="2"
+        >
+          <CategoryBadge category={blog.data.category} />
+
+          <HStack gap="2" justify="flex-end" flex="1">
+            <!-- 読了時間 -->
+            <ReadingTime content={blog.data.content || ""} gap="1" />
+
+            <!-- 公開日 -->
+            <Date date={blog.data.publishDate || ""} gap="1" type="publish" />
+          </HStack>
+        </HStack>
+      </Flex>
+    </Flex>
+  </s.a>
+</Card>

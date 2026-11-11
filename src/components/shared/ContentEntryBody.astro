@@ -1,0 +1,91 @@
+---
+import { Flex, styled as s } from "styled-system/jsx";
+import Discussion from "@/components/features/blog/Discussion";
+import ShareMenu from "@/components/features/blog/ShareMenu.astro";
+import SideArticle from "@/components/features/blog/SideArticle.astro";
+import TableOfContents from "@/components/features/blog/TableOfContents.astro";
+import { shouldShowDrafts } from "@/lib/post";
+
+export interface Props {
+	collection: "blog" | "product";
+	slug: string;
+	title: string;
+	description: string;
+	headings: {
+		depth: number;
+		slug: string;
+		text: string;
+	}[];
+	isPublish: boolean;
+}
+
+const { collection, slug, title, description, headings, isPublish } =
+	Astro.props;
+---
+
+<Flex flexDir={{ base: "column", lg: "row" }} gap={{ base: "6", lg: "8" }}>
+  <s.article
+    flex="1"
+    minW="0"
+    display="flex"
+    flexDir="column"
+    order={{ base: 2, lg: 1 }}
+  >
+    <s.div className="markdown-content" order="1">
+      <slot />
+    </s.div>
+
+    <s.nav order="2" aria-label="Share">
+      <ShareMenu
+        title={title}
+        slug={slug}
+        description={description}
+        visible="base"
+        collection={collection}
+      />
+    </s.nav>
+
+    <s.section order="3">
+      <Discussion client:visible />
+    </s.section>
+
+    <s.section order="4">
+      <SideArticle slug={slug} collection={collection} />
+    </s.section>
+  </s.article>
+
+  <s.aside
+    w={{ base: "100%", lg: "72" }}
+    order={{ base: 1, lg: 2 }}
+    display="flex"
+    flexDir="column"
+    gap="4"
+    position={{ base: "relative", lg: "sticky" }}
+    top={{ lg: "24" }}
+    alignSelf="flex-start"
+  >
+    <TableOfContents headings={headings} />
+
+    <s.nav aria-label="Share">
+      <ShareMenu
+        title={title}
+        slug={slug}
+        description={description}
+        visible="lg"
+        collection={collection}
+      />
+    </s.nav>
+
+    {shouldShowDrafts() && !isPublish && (
+      <s.div
+        bg="yellow.100"
+        color="yellow.800"
+        p="4"
+        borderRadius="md"
+        textAlign="center"
+      >
+        <p>この記事は下書きです。まだ、公開されていません。</p>
+      </s.div>
+    )}
+  </s.aside>
+</Flex>

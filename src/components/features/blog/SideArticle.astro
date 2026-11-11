@@ -1,0 +1,155 @@
+---
+import Icon from "@suzuuuuu09/astro-iconify";
+import { css } from "styled-system/css";
+import { Flex, Grid, HStack, styled as s } from "styled-system/jsx";
+import { getBlogPosts, getProductPosts } from "@/lib/post";
+
+export interface Props {
+	slug: string;
+	collection?: "blog" | "product";
+}
+
+const { slug, collection = "blog" } = Astro.props as Props;
+
+const collectionEntries =
+	collection === "blog" ? await getBlogPosts() : await getProductPosts();
+
+// 現在の記事のインデックスを取得
+const currentIndex = collectionEntries.findIndex(
+	(entry) => entry.data?.slug === slug,
+);
+
+// 前後の記事を取得
+const prevArticle =
+	currentIndex > 0 ? collectionEntries[currentIndex - 1] : null;
+const nextArticle =
+	currentIndex < collectionEntries.length - 1
+		? collectionEntries[currentIndex + 1]
+		: null;
+---
+
+<Grid
+  as="nav"
+  gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
+  gap="4"
+  mt="12"
+  pt="8"
+  borderTopWidth="1px"
+  borderColor="sz.border/50"
+  md={{ justifyItems: "center" }}
+>
+  <!-- 前の記事 -->
+  {
+    nextArticle && (
+      <a
+        href={`/${collection}/${nextArticle?.data?.slug ?? nextArticle?.id}/`}
+        class={css({
+          display: "flex",
+          flexDirection: "column",
+          w: "full",
+          gap: "2",
+          p: "4",
+          borderRadius: "xl",
+          borderWidth: "1",
+          borderColor: "sz.border/50",
+          bg: "sz.bg",
+          transition: "all 0.3s",
+          textDecoration: "none",
+          textAlign: { base: "left", md: "right" },
+          _hover: {
+            borderColor: "sz.primary/50",
+            bg: "sz.bg-on",
+            shadow: "md",
+            transform: "translateY(-2px)",
+          },
+          _md: {
+            maxW: "600px",
+          },
+        })}
+      >
+        <HStack
+          gap="2"
+          color="sz.text.sub"
+          fontSize="sm"
+          flexWrap="wrap"
+          justify="flex-start"
+        >
+          <Icon name="mdi:chevron-left" size={20} />
+          <span>前の記事</span>
+        </HStack>
+        <Flex
+          color="sz.text.main"
+          fontWeight="bold"
+          lineHeight="snug"
+          overflow="hidden"
+          textOverflow="ellipsis"
+          flexDir="column"
+          lineClamp="2"
+        >
+          {"emoji" in nextArticle.data && nextArticle?.data?.emoji && (
+            <s.span mr="2">{nextArticle.data.emoji}</s.span>
+          )}
+          {nextArticle?.data?.title}
+        </Flex>
+      </a>
+    )
+  }
+
+  <!-- 次の記事 -->
+  {
+    prevArticle && (
+      <a
+        href={`/${collection}/${prevArticle?.data?.slug ?? prevArticle?.id}/`}
+        class={css({
+          display: "flex",
+          flexDir: "column",
+          w: "full",
+          gap: "2",
+          p: "4",
+          borderRadius: "xl",
+          borderWidth: "1px",
+          borderColor: "sz.border/50",
+          bg: "sz.bg",
+          transition: "all 0.3s",
+          textDecoration: "none",
+          textAlign: { base: "right", md: "left" },
+          gridColumn: { base: "1", md: "2" },
+          _hover: {
+            borderColor: "sz.primary/50",
+            bg: "sz.bg-on",
+            shadow: "md",
+            transform: "translateY(-2px)",
+          },
+          _md: {
+            maxW: "600px",
+          },
+        })}
+      >
+        <HStack
+          flexWrap="wrap"
+          justify="flex-end"
+          gap="2"
+          color="sz.text.sub"
+          fontSize="sm"
+        >
+          <span>次の記事</span>
+          <Icon name="mdi:chevron-right" size={20} />
+        </HStack>
+        <Flex
+          color="sz.text.main"
+          fontWeight="bold"
+          lineHeight="snug"
+          overflow="hidden"
+          textOverflow="ellipsis"
+          flexDir="column"
+          lineClamp="2"
+        >
+          {"emoji" in prevArticle.data && prevArticle?.data?.emoji && (
+            <s.span mr="2">{prevArticle.data.emoji}</s.span>
+          )}
+          {prevArticle?.data?.title}
+        </Flex>
+      </a>
+    )
+  }
+</Grid>

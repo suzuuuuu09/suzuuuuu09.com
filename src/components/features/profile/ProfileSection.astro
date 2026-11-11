@@ -1,0 +1,58 @@
+---
+import { Icon } from "@suzuuuuu09/astro-iconify";
+import { css } from "styled-system/css";
+import { Flex, HStack, styled as s } from "styled-system/jsx";
+import { SectionLayout } from "@/components/shared/SectionLayout";
+import SectionTitle from "@/components/shared/SectionTitle.astro";
+import Avatar from "@/components/ui/Avatar.astro";
+import { CONTACT_LINKS } from "@/consts/contact";
+import { Content as ProfileContent } from "@/content/profile.md";
+---
+
+<SectionLayout>
+  <SectionTitle level={1}>Profile</SectionTitle>
+  <Flex
+    flexDir={{ base: "column", md: "row" }}
+    justifyContent={{ base: "center", md: "start" }}
+    alignItems={{ base: "center", md: "start" }}
+    gap="6"
+  >
+    <div>
+      <Avatar square border size={200} />
+      <HStack px="4" mt="4" justifyContent="center" alignItems="center" gap="6">
+        {
+          CONTACT_LINKS.map((link) => (
+            <a
+              href={link.url}
+              rel="noopener noreferrer"
+              target="_blank"
+              aria-label={link.label}
+              class={link.color ? undefined : css({ color: "sz.icon" })}
+              style={link.color ? `color: ${link.color}` : undefined}
+            >
+              <Icon size={24} name={link.icon} />
+            </a>
+          ))
+        }
+      </HStack>
+    </div>
+    <s.div color="sz.text.main">
+      <s.h2
+        my="1"
+        pb="1"
+        borderBottomWidth="1"
+        borderBottomColor="sz.border"
+        fontWeight="bold"
+        fontSize="2xl">suzu / @suzuuuuu09</s.h2
+      >
+      <ProfileContent class="markdown-content" />
+      <s.a
+        href="/about"
+        color="sz.primary"
+        _hover={{ textDecoration: "underline" }}
+      >
+        もっと見る
+      </s.a>
+    </s.div>
+  </Flex>
+</SectionLayout>

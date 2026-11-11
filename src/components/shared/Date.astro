@@ -1,0 +1,36 @@
+---
+import Icon from "@suzuuuuu09/astro-iconify";
+import { HStack, styled as s } from "styled-system/jsx";
+import { getFormattedDate } from "@/lib/date";
+
+interface Props {
+	date: string | Date;
+	gap: string;
+	type: "publish" | "update";
+	iconSize?: number;
+}
+
+const { date, gap, type, iconSize = 16 } = Astro.props as Props;
+
+const dateInfo = getFormattedDate(date);
+
+const icon = (() => {
+	switch (type) {
+		case "publish":
+			return "mdi:calendar";
+		case "update":
+			return "mdi:update";
+	}
+})();
+---
+
+{
+	dateInfo && (
+		<HStack gap={gap}>
+			<Icon name={icon} size={iconSize} />
+			<s.time dateTime={dateInfo.dateTime} color="sz.text.main" fontSize="sm">
+				{dateInfo.formattedDate}
+			</s.time>
+		</HStack>
+	)
+}

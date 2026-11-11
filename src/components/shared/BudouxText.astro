@@ -1,0 +1,36 @@
+---
+import { loadDefaultJapaneseParser } from "budoux";
+import { styled as s } from "styled-system/jsx";
+
+interface Props {
+	text: string;
+	as?: "span" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "div";
+	className?: string;
+	wrap?: boolean;
+}
+
+const {
+	text,
+	as: Component = "span",
+	className,
+	wrap = false,
+} = Astro.props as Props;
+const parser = loadDefaultJapaneseParser();
+const rawWords = parser.parse(text);
+const words = rawWords
+	.filter((word) => word.trim().length > 0)
+	.map((word) => word.replace(/^\s+|\s+$/g, ""));
+---
+
+<Component class={className}>
+{words.map((word, index) => (
+	<s.span
+		key={index}
+		display={wrap ? "inline" : "inline-block"}
+		whiteSpace={wrap ? "normal" : "nowrap"}
+		overflowWrap={wrap ? "anywhere" : undefined}
+	>
+		{word}
+	</s.span>
+))}
+</Component>

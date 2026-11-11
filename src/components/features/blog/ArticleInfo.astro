@@ -1,0 +1,116 @@
+---
+import { Flex, styled as s, VStack } from "styled-system/jsx";
+import BudouxText from "@/components/shared/BudouxText.astro";
+import Date from "@/components/shared/Date.astro";
+import ReadingTime from "@/components/shared/ReadingTime.astro";
+import TagList from "./TagList.astro";
+
+interface Props {
+	title: string;
+	publishDate?: string | Date;
+	updateDate?: string | Date;
+	tags?: string[];
+	emoji?: string;
+	description?: string;
+	content?: string;
+}
+
+const {
+	title,
+	publishDate,
+	updateDate,
+	tags = [],
+	emoji,
+	description,
+	content,
+} = Astro.props;
+---
+
+<VStack alignItems="center" mb="8" gap="4">
+  <!-- 絵文字 -->
+  {
+    emoji && (
+      <Flex
+        alignItems="center"
+        justifyContent="center"
+        fontSize={{ base: "7xl", lg: "8xl" }}
+      >
+        {emoji}
+      </Flex>
+    )
+  }
+
+  <!-- タイトル -->
+  <s.h1
+    fontSize={{ base: "3xl", lg: "4xl" }}
+    fontWeight="bold"
+    textAlign="center"
+    m="0"
+    px={{ base: "4", sm: "6", md: "8" }}
+    w="full"
+    maxW="4xl"
+    lineHeight={{ base: "tight", lg: "normal", xl: "snug" }}
+    color="sz.text.main"
+    display="flex"
+    flexWrap="wrap"
+    justifyContent="center"
+    gap="0.5"
+  >
+    <BudouxText text={title} />
+  </s.h1>
+
+  <!-- タグ -->
+  {
+    tags.length > 0 && (
+      <Flex
+        justifyContent="center"
+        alignItems="center"
+        flexWrap="wrap"
+        gap="2"
+        mb="4"
+        maxW="4xl"
+      >
+        <TagList tags={tags} />
+      </Flex>
+    )
+  }
+
+  <!-- メタデータ -->
+  <s.div rounded="lg" w="full" maxW="2xl">
+    <Flex
+      justifyContent="center"
+      alignItems={{ base: "center", sm: "flex-start" }}
+      flexWrap="wrap"
+      gap={{ base: "4", sm: "6" }}
+      fontSize="sm"
+      color="sz.text.main"
+    >
+      <!-- 公開日 -->
+      {publishDate && <Date date={publishDate} gap="1.5" type="publish" />}
+
+      <!-- 更新日 -->
+      {updateDate && <Date date={updateDate} gap="1.5" type="update" />}
+
+      <!-- 読了時間 -->
+      <ReadingTime content={content || ""} gap="1.5" />
+    </Flex>
+  </s.div>
+
+  {
+    description && (
+      <s.p
+        textAlign="center"
+        lineHeight="relaxed"
+        maxW="2xl"
+        color="sz.text.main"
+        px="4"
+        display="flex"
+        flexWrap="wrap"
+        justifyContent="center"
+        gap="0.5"
+      >
+        <BudouxText text={description} />
+      </s.p>
+    )
+  }
+</VStack>

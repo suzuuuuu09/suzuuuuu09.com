@@ -1,0 +1,98 @@
+---
+import { css, cx } from "styled-system/css";
+import { Flex, HStack, styled as s } from "styled-system/jsx";
+import TagList from "@/components/features/blog/TagList.astro";
+import Date from "@/components/shared/Date.astro";
+import ReadingTime from "@/components/shared/ReadingTime.astro";
+import Thumbnail from "@/components/shared/Thumbnail.astro";
+import { Card } from "@/components/ui/Card";
+
+export interface Props {
+	product: {
+		id: string;
+		data: {
+			title: string;
+			publishDate: Date;
+			tags?: string[];
+			thumbnail?: string | null;
+			carousel?: string[] | null;
+			content?: string;
+		};
+	};
+	isDraft?: boolean;
+}
+
+const { product, isDraft = false } = Astro.props;
+const thumbnailSrc = product.data.thumbnail ?? product.data.carousel![0] ?? "";
+---
+
+<Card maxW="450px" isDraft={isDraft}>
+  <a
+    href={`/product/${product.id}/`}
+    class={cx(
+      css({ color: "sz.text.main", textDecoration: "none" }),
+      css({ display: "flex", flexDirection: "column", height: "100%" }),
+    )}
+  >
+    <Thumbnail
+			thumbnailPath={thumbnailSrc}
+      title={product.data.title}
+      type="card"
+      loading="lazy"
+      fetchpriority="auto"
+    />
+
+    <Flex
+      position="relative"
+      bgGradient="to-r"
+      gradientFrom="sz.primary/5"
+      gradientVia="sz.primary/10"
+      gradientTo="sz.primary/5"
+      p={{ base: "6", _sm: "6" }}
+      pb={{ base: "4", _sm: "4" }}
+      flex="1"
+      flexDir="column"
+    >
+      <s.h2
+        lineHeight="snug"
+        transition="colors 0.3s"
+        mx="1"
+        mb="3"
+        fontWeight="bold"
+        fontSize={{ base: "lg", _lg: "xl" }}
+        overflow="hidden"
+        overflowWrap="anywhere"
+        textOverflow="ellipsis"
+        lineClamp={{ base: "3", _lg: "2" }}
+        minW="0"
+        _groupHover={{ color: "sz.primary" }}
+      >
+        {product.data.title}
+      </s.h2>
+
+      <Flex flexDir="column" flex="1" justifyContent="space-between">
+        {
+          product.data.tags && product.data.tags.length > 0 && (
+            <HStack gap="2" mb="7" w="full" minW="0">
+              <TagList omit tags={product.data.tags} />
+            </HStack>
+          )
+        }
+
+        <HStack
+          justify="flex-end"
+          borderTopWidth="1px"
+          borderColor="sz.border/30"
+          pt="3"
+          gap="2"
+        >
+          <!-- 読了時間 -->
+          <ReadingTime content={product.data.content || ""} gap="1" />
+
+          <!-- 公開日 -->
+          <Date date={product.data.publishDate || ""} gap="1" type="publish" />
+        </HStack>
+      </Flex>
+    </Flex>
+  </a>
+</Card>
