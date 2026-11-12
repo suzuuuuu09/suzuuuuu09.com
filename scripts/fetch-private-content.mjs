@@ -108,7 +108,7 @@ try {
 	const gitEnvironment = createAuthenticatedGitEnvironment(askPassPath);
 	const localEnvironment = { ...process.env };
 	delete localEnvironment.PORTFOLIO_CONTENT_TOKEN;
-	const git = (args, authenticated = false, isolated = false) =>
+	const git = (args, authenticated = false) =>
 		execFileSync(
 			"git",
 			[
@@ -121,16 +121,7 @@ try {
 				...args,
 			],
 			{
-				env: isolated
-					? {
-							...gitEnvironment,
-							GIT_CONFIG_GLOBAL: "/dev/null",
-							GIT_CONFIG_SYSTEM: "/dev/null",
-							GIT_CONFIG_NOSYSTEM: "1",
-						}
-					: authenticated
-						? gitEnvironment
-						: localEnvironment,
+				env: authenticated ? gitEnvironment : localEnvironment,
 				encoding: "utf8",
 				stdio: ["ignore", "pipe", "pipe"],
 			},
@@ -155,52 +146,13 @@ try {
 		stage = "configuring the private content remote";
 		git(["-C", checkoutPath, "remote", "add", "origin", contentRepository]);
 		stage = "fetching the pinned content commit";
-		const fetchArguments = [
-			"-C",
-			checkoutPath,
-			"fetch",
-			"--depth",
-			"1",
-			"origin",
-			sha,
-		];
-		try {
-			git(fetchArguments, true);
-		} catch (error) {
-			if (process.env.WORKERS_CI !== "1") throw error;
-			let effectiveUrlMatches = null;
-			try {
-				effectiveUrlMatches =
-					git(
-						["-C", checkoutPath, "remote", "get-url", "origin"],
-						true,
-					).trim() === contentRepository;
-			} catch {}
-			console.info(
-				"[DEBUG-pc-git]",
-				JSON.stringify({ effectiveUrlMatches, isolatedRetry: "starting" }),
-			);
-			git(fetchArguments, true, true);
-			console.info(
-				"[DEBUG-pc-git]",
-				JSON.stringify({ isolatedRetry: "passed" }),
-			);
-		}
+		git(["-C", checkoutPath, "fetch", "--depth", "1", "origin", sha], true);
 		stage = "checking out the pinned content commit";
 		git(["-C", checkoutPath, "checkout", "--detach", sha]);
 		stage = "verifying the checked out content commit";
 		const actual = git(["-C", checkoutPath, "rev-parse", "HEAD"]).trim();
 		if (actual !== sha) throw new Error("Content commit mismatch");
 	} catch (error) {
-		if (process.env.WORKERS_CI === "1") {
-			const { diagnoseContentAccess } = await import(
-				"./diagnose-content-access.mjs"
-			);
-			console.info(
-				"[DEBUG-pc-auth]",
-				JSON.stringify(await diagnoseContentAccess(token, requestedSha)),
-			);
-		}
 		throw new Error(
 			`Private content fetch failed while ${stage}: ${safeFailureReason(error)}. Authentication output withheld.`,
 		);
