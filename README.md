@@ -4,14 +4,28 @@ Astro / React portfolio implementation. Editorial sources are maintained in the 
 
 ## Local development
 
-Clone the private content repository into the ignored src/content directory, then run:
+From the public code repository root, clone the private content repository
+into the ignored `src/content` directory. Git must already be authenticated
+with read access to `suzuuuuu09/portfolio-content`:
+
+```sh
+git clone https://github.com/suzuuuuu09/portfolio-content.git src/content
+```
+
+Then install dependencies and start Astro:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm run dev
 ```
 
-Open src/content as the Obsidian Vault. Publish Desk source is in tools/publish-desk.
+Open the URL printed by Astro (normally `http://localhost:4321/blog/`) to
+preview the blog. `src/content` is itself the private Git repository and is
+ignored by the public repository. Open it as the Obsidian Vault; commit, push,
+and pull content changes from that directory.
+
+The clone uses your existing GitHub CLI authentication; local development does
+not need `PORTFOLIO_CONTENT_TOKEN`. Publish Desk source is in `tools/publish-desk`.
 
 ## Encrypted environment
 

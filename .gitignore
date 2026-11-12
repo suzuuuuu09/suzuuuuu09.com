@@ -55,7 +55,7 @@ src/content/.obsidian/snippets/*
 .wrangler/
 
 # Private content checkout (the portfolio-content repository)
-src/content/
+src/content
 
 # Private build provenance (retained in private build logs)
 .build-revisions.json
