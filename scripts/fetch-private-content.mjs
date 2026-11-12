@@ -14,7 +14,8 @@ import { fileURLToPath } from "node:url";
 
 const projectDirectory = join(dirname(fileURLToPath(import.meta.url)), "..");
 const contentDirectory = join(projectDirectory, "src/content");
-const contentRepository = "https://github.com/suzuuuuu09/portfolio-content.git";
+const contentAccount = "suzuuuuu09";
+const contentRepository = `https://github.com/${contentAccount}/portfolio-content.git`;
 const contentBranch = "main";
 const requestedSha = process.env.PORTFOLIO_CONTENT_SHA;
 if (requestedSha && !/^[a-f0-9]{40}$/.test(requestedSha))
@@ -62,7 +63,7 @@ try {
 	let stage = "resolving the content commit";
 	writeFileSync(
 		askPassPath,
-		'#!/bin/sh\ncase "$1" in\n*Username*) printf \'%s\\n\' "x-access-token" ;;\n*) printf \'%s\\n\' "$PORTFOLIO_CONTENT_TOKEN" ;;\nesac\n',
+		`#!/bin/sh\ncase "$1" in\n*Username*) printf '%s\\n' "${contentAccount}" ;;\n*) printf '%s\\n' "$PORTFOLIO_CONTENT_TOKEN" ;;\nesac\n`,
 	);
 	chmodSync(askPassPath, 0o700);
 
