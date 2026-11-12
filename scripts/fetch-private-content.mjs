@@ -43,6 +43,44 @@ const safeFailureReason = (error) => {
 	return "the Git operation failed; details withheld";
 };
 
+const createAuthenticatedGitEnvironment = (askPassPath) => {
+	const environment = {
+		...process.env,
+		GIT_ASKPASS: askPassPath,
+		GIT_TERMINAL_PROMPT: "0",
+	};
+	const configCount = Number(process.env.GIT_CONFIG_COUNT ?? 0);
+	const configEntries =
+		Number.isSafeInteger(configCount) && configCount > 0
+			? Array.from({ length: configCount }, (_, index) => [
+					process.env[`GIT_CONFIG_KEY_${index}`],
+					process.env[`GIT_CONFIG_VALUE_${index}`],
+				])
+			: [];
+	const retainedConfig = configEntries.filter(
+		([key]) => !/^http\..*\.extraheader$/i.test(key ?? ""),
+	);
+
+	if (retainedConfig.length !== configEntries.length) {
+		for (const key of Object.keys(environment)) {
+			if (/^GIT_CONFIG_(KEY|VALUE)_\d+$/.test(key)) delete environment[key];
+		}
+		if (retainedConfig.length === 0) {
+			delete environment.GIT_CONFIG_COUNT;
+		} else {
+			environment.GIT_CONFIG_COUNT = String(retainedConfig.length);
+			for (const [index, [key, value]] of retainedConfig.entries()) {
+				environment[`GIT_CONFIG_KEY_${index}`] = key;
+				environment[`GIT_CONFIG_VALUE_${index}`] = value;
+			}
+		}
+		console.info("Ignored inherited Git HTTP authorization header.");
+	}
+
+	delete environment.GIT_CONFIG_PARAMETERS;
+	return environment;
+};
+
 if (existsSync(contentDirectory)) {
 	throw new Error(
 		"Refusing to replace src/content. Run this only in a clean code checkout.",
@@ -67,19 +105,27 @@ try {
 	);
 	chmodSync(askPassPath, 0o700);
 
-	const gitEnvironment = {
-		...process.env,
-		GIT_ASKPASS: askPassPath,
-		GIT_TERMINAL_PROMPT: "0",
-	};
+	const gitEnvironment = createAuthenticatedGitEnvironment(askPassPath);
 	const localEnvironment = { ...process.env };
 	delete localEnvironment.PORTFOLIO_CONTENT_TOKEN;
 	const git = (args, authenticated = false) =>
-		execFileSync("git", ["-c", "credential.helper=", ...args], {
-			env: authenticated ? gitEnvironment : localEnvironment,
-			encoding: "utf8",
-			stdio: ["ignore", "pipe", "pipe"],
-		});
+		execFileSync(
+			"git",
+			[
+				"-c",
+				"credential.helper=",
+				"-c",
+				"http.extraheader=",
+				"-c",
+				"http.https://github.com/.extraheader=",
+				...args,
+			],
+			{
+				env: authenticated ? gitEnvironment : localEnvironment,
+				encoding: "utf8",
+				stdio: ["ignore", "pipe", "pipe"],
+			},
+		);
 	try {
 		const sha =
 			requestedSha ??

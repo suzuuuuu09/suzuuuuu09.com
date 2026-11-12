@@ -51,9 +51,11 @@ test("fetch pins a requested commit, records both revisions, and refuses to repl
 			...process.env,
 			PORTFOLIO_CONTENT_TOKEN: token,
 			PORTFOLIO_CONTENT_SHA: pinned,
-			GIT_CONFIG_COUNT: "1",
+			GIT_CONFIG_COUNT: "2",
 			GIT_CONFIG_KEY_0: `url.file://${content}.insteadOf`,
 			GIT_CONFIG_VALUE_0: "https://github.com/suzuuuuu09/portfolio-content.git",
+			GIT_CONFIG_KEY_1: "http.https://github.com/.extraheader",
+			GIT_CONFIG_VALUE_1: "Authorization: Basic INHERITED_BUILD_CREDENTIAL",
 		};
 		const result = spawnSync(
 			process.execPath,
@@ -62,6 +64,15 @@ test("fetch pins a requested commit, records both revisions, and refuses to repl
 		);
 		assert.equal(result.status, 0, result.stderr);
 		assert(!`${result.stdout}${result.stderr}`.includes(token));
+		assert.match(
+			result.stdout,
+			/Ignored inherited Git HTTP authorization header/,
+		);
+		assert(
+			!`${result.stdout}${result.stderr}`.includes(
+				"INHERITED_BUILD_CREDENTIAL",
+			),
+		);
 		assert.equal(
 			readFileSync(join(code, "src/content/profile.md"), "utf8"),
 			"original",
