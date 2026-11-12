@@ -21,6 +21,27 @@ if (requestedSha && !/^[a-f0-9]{40}$/.test(requestedSha))
 	throw new Error("PORTFOLIO_CONTENT_SHA must be a full commit SHA");
 const token = process.env.PORTFOLIO_CONTENT_TOKEN;
 
+const safeFailureReason = (error) => {
+	const stderr = String(error?.stderr ?? "").toLowerCase();
+	if (
+		/authentication failed|bad credentials|invalid username or password|returned error: 401/.test(
+			stderr,
+		)
+	)
+		return "GitHub rejected the token";
+	if (
+		/repository not found|access denied|write access .*not granted|returned error: 403|returned error: 404/.test(
+			stderr,
+		)
+	)
+		return "the token cannot access the private repository";
+	if (/not our ref|unadvertised object|couldn't find remote ref/.test(stderr))
+		return "the requested content commit is unavailable";
+	if (/could not read username|terminal prompts disabled/.test(stderr))
+		return "Git did not receive credentials";
+	return "the Git operation failed; details withheld";
+};
+
 if (existsSync(contentDirectory)) {
 	throw new Error(
 		"Refusing to replace src/content. Run this only in a clean code checkout.",
@@ -38,6 +59,7 @@ const askPassPath = join(temporaryDirectory, "askpass");
 const checkoutPath = join(temporaryDirectory, "content");
 
 try {
+	let stage = "resolving the content commit";
 	writeFileSync(
 		askPassPath,
 		'#!/bin/sh\ncase "$1" in\n*Username*) printf \'%s\\n\' "x-access-token" ;;\n*) printf \'%s\\n\' "$PORTFOLIO_CONTENT_TOKEN" ;;\nesac\n',
@@ -72,15 +94,20 @@ try {
 			JSON.stringify({ codeSha, contentSha: sha }, null, 2) + "\n",
 		);
 		console.info(JSON.stringify({ codeSha, contentSha: sha }));
+		stage = "initializing the temporary checkout";
 		git(["init", checkoutPath]);
+		stage = "configuring the private content remote";
 		git(["-C", checkoutPath, "remote", "add", "origin", contentRepository]);
+		stage = "fetching the pinned content commit";
 		git(["-C", checkoutPath, "fetch", "--depth", "1", "origin", sha], true);
+		stage = "checking out the pinned content commit";
 		git(["-C", checkoutPath, "checkout", "--detach", sha]);
+		stage = "verifying the checked out content commit";
 		const actual = git(["-C", checkoutPath, "rev-parse", "HEAD"]).trim();
 		if (actual !== sha) throw new Error("Content commit mismatch");
-	} catch {
+	} catch (error) {
 		throw new Error(
-			"Private content fetch failed; check repository access and the requested commit. Authentication output withheld.",
+			`Private content fetch failed while ${stage}: ${safeFailureReason(error)}. Authentication output withheld.`,
 		);
 	}
 

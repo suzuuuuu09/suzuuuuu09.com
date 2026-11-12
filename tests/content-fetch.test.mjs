@@ -78,6 +78,30 @@ test("fetch pins a requested commit, records both revisions, and refuses to repl
 				token,
 			),
 		);
+		rmSync(join(code, "src/content"), { recursive: true, force: true });
+		const unavailableCommit = spawnSync(
+			process.execPath,
+			["scripts/fetch-private-content.mjs"],
+			{
+				cwd: code,
+				env: { ...env, PORTFOLIO_CONTENT_SHA: "a".repeat(40) },
+				encoding: "utf8",
+			},
+		);
+		assert.notEqual(unavailableCommit.status, 0);
+		assert.match(
+			`${unavailableCommit.stdout}${unavailableCommit.stderr}`,
+			/fetching the pinned content commit: the requested content commit is unavailable/,
+		);
+		assert(
+			!`${unavailableCommit.stdout}${unavailableCommit.stderr}`.includes(token),
+		);
+		const restored = spawnSync(
+			process.execPath,
+			["scripts/fetch-private-content.mjs"],
+			{ cwd: code, env, encoding: "utf8" },
+		);
+		assert.equal(restored.status, 0, restored.stderr);
 		const repeat = spawnSync(
 			process.execPath,
 			["scripts/fetch-private-content.mjs"],
