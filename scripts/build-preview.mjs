@@ -3,20 +3,26 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const projectDirectory = fileURLToPath(new URL("../", import.meta.url));
-const privateCredential = Object.keys(process.env).some(
+// PR code can bypass this guard; Cloudflare Preview settings must withhold
+// PORTFOLIO_CONTENT_TOKEN and DOTENV_PRIVATE_KEY*, and set SKIP_DEPENDENCY_INSTALL=1.
+const privateCredentials = Object.keys(process.env).filter(
 	(name) =>
 		name === "PORTFOLIO_CONTENT_TOKEN" || name.startsWith("DOTENV_PRIVATE_KEY"),
 );
 
-if (privateCredential || existsSync(new URL("../.env.keys", import.meta.url))) {
+if (existsSync(new URL("../.env.keys", import.meta.url))) {
+	privateCredentials.push(".env.keys");
+}
+
+if (privateCredentials.length > 0) {
 	throw new Error(
-		"Preview builds must not receive private content credentials or dotenvx decryption keys.",
+		`Preview builds must not receive private inputs: ${privateCredentials.join(", ")}`,
 	);
 }
 
 if (existsSync(new URL("../src/content", import.meta.url))) {
 	throw new Error(
-		"Preview builds require a clean checkout without private content.",
+		"Preview builds require a clean checkout without src/content.",
 	);
 }
 

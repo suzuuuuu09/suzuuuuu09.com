@@ -12,6 +12,7 @@ test("preview builds reject private inputs before installing dependencies", asyn
 		for (const [index, scenario] of [
 			{ environment: { PORTFOLIO_CONTENT_TOKEN: "synthetic" } },
 			{ environment: { DOTENV_PRIVATE_KEY: "synthetic" } },
+			{ environment: { DOTENV_PRIVATE_KEY_PRODUCTION: "synthetic" } },
 			{ file: "/.env.keys" },
 			{ file: "/src/content" },
 			{},
@@ -25,7 +26,13 @@ test("preview builds reject private inputs before installing dependencies", asyn
 			syncBuiltinESMExports();
 			const build = import(`../scripts/build-preview.mjs?scenario=${index}`);
 			if (scenario.environment || scenario.file) {
-				await assert.rejects(build, /Preview builds/);
+				await assert.rejects(build, (error) => {
+					const input =
+						scenario.file?.slice(1) ?? Object.keys(scenario.environment)[0];
+					assert.ok(error.message.includes(input));
+					assert.ok(!error.message.includes("synthetic"));
+					return true;
+				});
 				assert.deepEqual(calls, []);
 			} else {
 				await build;
