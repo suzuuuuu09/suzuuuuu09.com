@@ -153,6 +153,15 @@ try {
 		const actual = git(["-C", checkoutPath, "rev-parse", "HEAD"]).trim();
 		if (actual !== sha) throw new Error("Content commit mismatch");
 	} catch (error) {
+		if (process.env.WORKERS_CI === "1") {
+			const { diagnoseContentAccess } = await import(
+				"./diagnose-content-access.mjs"
+			);
+			console.info(
+				"[DEBUG-pc-auth]",
+				JSON.stringify(await diagnoseContentAccess(token, requestedSha)),
+			);
+		}
 		throw new Error(
 			`Private content fetch failed while ${stage}: ${safeFailureReason(error)}. Authentication output withheld.`,
 		);
