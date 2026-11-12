@@ -48,6 +48,9 @@ const createAuthenticatedGitEnvironment = (askPassPath) => {
 		...process.env,
 		GIT_ASKPASS: askPassPath,
 		GIT_TERMINAL_PROMPT: "0",
+		GIT_CONFIG_GLOBAL: "/dev/null",
+		GIT_CONFIG_SYSTEM: "/dev/null",
+		GIT_CONFIG_NOSYSTEM: "1",
 	};
 	const configCount = Number(process.env.GIT_CONFIG_COUNT ?? 0);
 	const configEntries =

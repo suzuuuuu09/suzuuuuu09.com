@@ -47,10 +47,13 @@ test("fetch pins a requested commit, records both revisions, and refuses to repl
 		git(code, "add", ".");
 		git(code, "commit", "-m", "code fixture");
 		const token = "PRIVATE_TEST_TOKEN_8d729c";
+		const inheritedGlobalConfig = join(root, "global.gitconfig");
+		writeFileSync(inheritedGlobalConfig, '[protocol "file"]\nallow = never\n');
 		const env = {
 			...process.env,
 			PORTFOLIO_CONTENT_TOKEN: token,
 			PORTFOLIO_CONTENT_SHA: pinned,
+			GIT_CONFIG_GLOBAL: inheritedGlobalConfig,
 			GIT_CONFIG_COUNT: "2",
 			GIT_CONFIG_KEY_0: `url.file://${content}.insteadOf`,
 			GIT_CONFIG_VALUE_0: "https://github.com/suzuuuuu09/portfolio-content.git",
