@@ -448,7 +448,7 @@ test("replacing HTML with Markdown cancels the unused HTML body", async () => {
 	assert.equal(cancelled, true);
 });
 
-test("missing variants, redirects, and 404 responses keep their original behavior", async () => {
+test("missing variants and redirects keep their behavior and Markdown 404s explain the error", async () => {
 	const missing = await negotiateMarkdown(
 		new Request("https://example.com/about/", {
 			headers: { Accept: "text/markdown" },
@@ -481,13 +481,63 @@ test("missing variants, redirects, and 404 responses keep their original behavio
 		status: 404,
 		headers: { "Content-Type": "text/html; charset=utf-8" },
 	});
+	let fetchedMissingMarkdown = false;
 	const notFoundResponse = await negotiateMarkdown(
-		new Request("https://example.com/blog/private-draft/", {
+		new Request("https://example.com/__ora-404-probe-test", {
 			headers: { Accept: "text/markdown" },
 		}),
 		notFound,
-		createAssets({ "/_markdown/blog/private-draft.md": "# Leak" }),
+		{
+			async fetch() {
+				fetchedMissingMarkdown = true;
+				return new Response("# Leak");
+			},
+		},
 	);
 	assert.equal(notFoundResponse.status, 404);
-	assert.equal(await notFoundResponse.text(), "Missing");
+	assert.equal(
+		notFoundResponse.headers.get("content-type"),
+		"text/markdown; charset=utf-8",
+	);
+	assert.equal(notFoundResponse.headers.get("cache-control"), "no-store");
+	assert.match(notFoundResponse.headers.get("vary") ?? "", /\baccept\b/i);
+	assert.equal(fetchedMissingMarkdown, false);
+	const errorBody = await notFoundResponse.text();
+	assert(errorBody.length >= 20);
+	assert.match(errorBody, /could not be found/i);
+	assert.match(errorBody, /\[[^\]]+\]\(\/llms\.txt\)/);
+	assert.doesNotMatch(errorBody, /Leak/);
+
+	const notFoundHead = await negotiateMarkdown(
+		new Request("https://example.com/blog/missing/", {
+			method: "HEAD",
+			headers: { Accept: "text/markdown" },
+		}),
+		new Response("Missing", {
+			status: 404,
+			headers: { "Content-Type": "text/html; charset=utf-8" },
+		}),
+		createAssets({}),
+	);
+	assert.equal(notFoundHead.status, 404);
+	assert.equal(
+		notFoundHead.headers.get("content-type"),
+		"text/markdown; charset=utf-8",
+	);
+	assert.equal(await notFoundHead.text(), "");
+
+	const htmlNotFound = await negotiateMarkdown(
+		new Request("https://example.com/blog/missing/", {
+			headers: { Accept: "text/html" },
+		}),
+		new Response("Missing", {
+			status: 404,
+			headers: { "Content-Type": "text/html; charset=utf-8" },
+		}),
+		createAssets({}),
+	);
+	assert.equal(htmlNotFound.status, 404);
+	assert.match(htmlNotFound.headers.get("content-type") ?? "", /^text\/html/);
+	assert.match(htmlNotFound.headers.get("vary") ?? "", /\baccept\b/i);
+	assert.equal(await htmlNotFound.text(), "Missing");
 });

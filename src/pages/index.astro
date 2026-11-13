@@ -5,10 +5,24 @@ import CareerSection from "@/components/features/career/CareerSection.astro";
 import ProductSection from "@/components/features/product/ProductSection.astro";
 import ProfileSection from "@/components/features/profile/ProfileSection.astro";
 import SkillSection from "@/components/features/skill/SkillSection.astro";
+import { SITE_DESCRIPTION } from "@/consts/base";
+import { CONTACT_LINKS } from "@/consts/contact";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const personJsonLd = JSON.stringify({
+	"@context": "https://schema.org",
+	"@type": "Person",
+	name: "suzu",
+	alternateName: "@suzuuuuu09",
+	description: SITE_DESCRIPTION,
+	url: new URL("/", Astro.site ?? Astro.url).toString(),
+	sameAs: CONTACT_LINKS.map(({ url }) => url),
+	knowsAbout: ["Web development", "TypeScript", "Astro", "Svelte", "Vue.js"],
+}).replace(/</g, "\\u003c");
 ---
 
 <BaseLayout title="Home">
+  <script is:inline type="application/ld+json" set:html={personJsonLd}></script>
   <ProfileSection />
   <SkillSection />
   <CareerSection />

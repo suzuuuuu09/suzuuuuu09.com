@@ -90,7 +90,8 @@ export function isContentPage(pathname: string): boolean {
 	const key = pageKey(pathname);
 	return (
 		!key.startsWith("api/") &&
-		!key.startsWith("_") &&
+		!key.startsWith("_astro/") &&
+		!key.startsWith("_markdown/") &&
 		!key.startsWith("~") &&
 		key !== "404"
 	);
@@ -224,10 +225,42 @@ export async function negotiateMarkdown(
 		});
 	}
 
-	if (response.status !== 200 && response.status !== 206) return response;
-
 	const contentType = response.headers.get("content-type") ?? "";
 	if (!contentType.toLowerCase().includes("text/html")) return response;
+	if (response.status === 404) {
+		const headers = new Headers(response.headers);
+		applyPageHeaders(headers, pathname, response.headers);
+
+		if (!prefersMarkdown(request.headers.get("Accept"))) {
+			return new Response(response.body, {
+				status: response.status,
+				statusText: response.statusText,
+				headers,
+			});
+		}
+
+		await response.body?.cancel();
+		headers.set("Content-Type", "text/markdown; charset=utf-8");
+		headers.set("Cache-Control", "no-store");
+		headers.delete("Content-Length");
+		headers.delete("Content-Encoding");
+		headers.delete("ETag");
+		headers.delete("Last-Modified");
+		headers.delete("Content-Range");
+
+		return new Response(
+			request.method === "HEAD"
+				? null
+				: "# Page not found\n\nThe requested page could not be found. See the [site index](/llms.txt) for published content.\n",
+			{
+				status: response.status,
+				statusText: response.statusText,
+				headers,
+			},
+		);
+	}
+
+	if (response.status !== 200 && response.status !== 206) return response;
 
 	const markdown =
 		response.status === 200 && prefersMarkdown(request.headers.get("Accept"))

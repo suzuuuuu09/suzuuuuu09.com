@@ -10,7 +10,9 @@
 ## 実装
 
 - ホームでは `/llms.txt` を `rel="describedby"` のLinkヘッダーで案内する。`robots.txt` と公開HTML/MarkdownページのHTTPレスポンスには同じContent Signalsを付ける。
+- ホームには `Person` のJSON-LDを付け、プロフィール、説明、知識分野、本人の公開SNSリンクを示す。本番ホームは検索可能にし、Workersのfeature previewは検索対象外のままにする。
 - 公開HTMLページのMarkdown版をビルド時に生成する。記事・制作物の既存Markdownを再利用し、リクエストごとのHTML変換は行わない。
+- HTMLの404は状態を維持する。`Accept: text/markdown` を優先する場合は、公開ページ一覧へのリンクを含むMarkdown本文を返す。存在しないURLに対応するMarkdown候補は取得しない。
 - Workerは `Accept` に応じてHTMLまたは静的Markdownを返す。HTMLを既定とし、q値と `text/markdown;q=0` を扱う。画像・CSS・JS・既存APIは交渉対象外とする。
 - 同じURLでHTMLとMarkdownを返すため、両方に `Vary: Accept` を付け、Cloudflare CDNでは `no-store` にする。これによりAcceptの異なる本文が同じCDNキャッシュ項目に混ざらない。HTMLのブラウザー向け `Cache-Control` は維持する。CDNキャッシュを使わない分の配信影響と、本番のWorkers契約・利用枠への影響は公開前に確認する。
 - 通常のHTMLアクセスも対象ルートではWorkerを通る。Workersの利用上限に収まるかは実トラフィックで確認する。追加サービスや契約変更は行わない。

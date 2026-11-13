@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 
-const base = new URL(process.argv[2] ?? "http://localhost:8787");
+const target = process.argv[2] === "--" ? process.argv[3] : process.argv[2];
+const base = new URL(target ?? "http://localhost:8787");
 assert(["http:", "https:"].includes(base.protocol), "Expected an HTTP URL");
 
 for (const [path, type, japanese] of [
@@ -9,6 +10,9 @@ for (const [path, type, japanese] of [
 	["/blog/markdown-guide/", "text/html"],
 	["/product/", "text/html"],
 	["/rss.xml", "xml"],
+	["/robots.txt", "text/plain"],
+	["/sitemap-index.xml", "xml"],
+	["/sitemap-0.xml", "xml"],
 	["/llms.txt", "text/plain", "技術記事"],
 	["/blog/markdown-guide.md", "text/markdown", "見出し"],
 	["/api/og/default.png", "image/png"],
@@ -32,6 +36,25 @@ for (const [path, type, japanese] of [
 	}
 	if (path === "/blog/markdown-guide/") {
 		assert((await response.text()).includes('id="site-mermaid'), "Mermaid SVG");
+	}
+	if (path === "/rss.xml") {
+		const xml = await response.text();
+		assert.match(xml, /<rss\b/i, "RSS document");
+		assert.match(xml, /<channel\b/i, "RSS channel");
+	}
+	if (path === "/robots.txt") {
+		const robots = await response.text();
+		assert.match(
+			robots,
+			/Content-Signal: search=yes, ai-input=yes, ai-train=no/,
+		);
+		assert.match(robots, /^Sitemap: https:\/\//m);
+	}
+	if (path === "/sitemap-index.xml") {
+		assert.match(await response.text(), /<sitemapindex\b/i, "Sitemap index");
+	}
+	if (path === "/sitemap-0.xml") {
+		assert.match(await response.text(), /<urlset\b/i, "Sitemap URL set");
 	}
 	if (path === "/") {
 		assert(
@@ -68,11 +91,24 @@ assert.equal(
 	"search=yes, ai-input=yes, ai-train=no",
 	"Home Content-Signal",
 );
+assert.equal(homeHtml.headers.get("x-robots-tag"), null, "Home is indexable");
+const homeHtmlBody = await homeHtml.text();
+assert.doesNotMatch(homeHtmlBody, /<meta\s+name=["']robots["'][^>]*noindex/i);
+const jsonLd = homeHtmlBody.match(
+	/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i,
+);
+assert(jsonLd, "Home Person JSON-LD");
+const person = JSON.parse(jsonLd[1]);
+assert.equal(person["@type"], "Person");
+assert.equal(person.name, "suzu");
+assert.equal(person.url, "https://suzuuuuu09.com/");
+assert(person.knowsAbout.includes("Web development"));
+assert(person.sameAs.includes("https://github.com/suzuuuuu09"));
+console.log("OK / (Person JSON-LD and indexable HTML)");
 console.log("OK / (HTML negotiation headers)");
 
 const htmlEtag = homeHtml.headers.get("etag");
 assert(htmlEtag, "Home HTML ETag");
-await homeHtml.body?.cancel();
 
 const validatedHtml = await fetch(new URL("/", base), {
 	headers: { Accept: "text/html", "If-None-Match": htmlEtag },
@@ -202,6 +238,21 @@ const missingMarkdown = await fetch(
 	},
 );
 assert.equal(missingMarkdown.status, 404, "Missing route with Markdown Accept");
+assert(
+	missingMarkdown.headers.get("content-type")?.includes("text/markdown"),
+	"Missing route Markdown Content-Type",
+);
+assert.match(
+	missingMarkdown.headers.get("vary") ?? "",
+	/(?:^|,\s*)accept(?:,|$)/i,
+	"Missing route Vary",
+);
+const missingMarkdownBody = await missingMarkdown.text();
+assert(
+	missingMarkdownBody.length >= 20,
+	"Markdown error body explains the error",
+);
+assert.match(missingMarkdownBody, /\[[^\]]+\]\(\/llms\.txt\)/);
 console.log("OK missing route with Markdown Accept (404)");
 
 const activity = await fetch(new URL("/api/activity", base), {
@@ -225,6 +276,7 @@ assert.equal(
 	404,
 	"Missing routes must not return the home page",
 );
+assert.match(missing.headers.get("vary") ?? "", /\baccept\b/i);
 console.log("OK missing route (404)");
 
 for (const collection of ["blog", "product"]) {
