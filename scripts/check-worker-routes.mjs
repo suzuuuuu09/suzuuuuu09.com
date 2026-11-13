@@ -145,6 +145,7 @@ const homeQ0 = await fetch(new URL("/", base), {
 	headers: { Accept: "text/markdown;q=0" },
 	signal: AbortSignal.timeout(15_000),
 });
+assert.equal(homeQ0.status, 200, "q=0 HTML status");
 assert(homeQ0.headers.get("content-type")?.includes("text/html"), "q=0 HTML");
 console.log("OK / (text/markdown;q=0 -> HTML)");
 

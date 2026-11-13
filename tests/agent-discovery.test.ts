@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { negotiateMarkdown } from "../src/lib/markdown-negotiation";
+import {
+	CONTENT_SIGNAL,
+	HOME_LINK,
+	negotiateMarkdown,
+} from "../src/lib/markdown-negotiation";
 
 function createAssets(files: Record<string, string>) {
 	return {
@@ -85,7 +89,7 @@ test("homepage negotiates Markdown and annotates HTML", async () => {
 });
 
 test("build self-check preserves authoritative Markdown and skips redirects", async () => {
-	const { mkdtemp, mkdir, writeFile, readFile } = await import(
+	const { mkdtemp, mkdir, readFile, rm, writeFile } = await import(
 		"node:fs/promises"
 	);
 	const { existsSync } = await import("node:fs");
@@ -94,73 +98,119 @@ test("build self-check preserves authoritative Markdown and skips redirects", as
 	const { generateMarkdown } = await import("../scripts/generate-markdown.mjs");
 
 	const directory = await mkdtemp(join(tmpdir(), "agent-markdown-"));
-	const page = (body: string) => `<!doctype html>
-<html><body>
-<header><a href="/">Site header</a></header>
-<nav>Navigation</nav>
-<main id="main-content">${body}</main>
-<footer>Footer text</footer>
-<script>console.log("script text")</script>
-<svg><text>SVG text</text></svg>
-</body></html>`;
+	try {
+		const page = (body: string) => `<!doctype html>
+			<html><body>
+			<header><a href="/">Site header</a></header>
+			<nav>Navigation</nav>
+			<main id="main-content">${body}</main>
+			<footer>Footer text</footer>
+			<script>console.log("script text")</script>
+			<svg><text>SVG text</text></svg>
+			</body></html>`;
+		const homeHtml = [
+			"<h1>Homepage</h1>",
+			'<p>Main copy with <a href="https://example.com">link</a>.</p>',
+			'<nav aria-label="ページ"><a href="/blog/2/">Next page</a></nav>',
+			'<a href="/blog/card/"><div><h2>Card title</h2><p>Card metadata</p></div></a>',
+		].join("");
 
-	await writeFile(
-		join(directory, "index.html"),
-		page(
-			'<h1>Homepage</h1><p>Main copy with <a href="https://example.com">link</a>.</p>',
-		),
+		await writeFile(join(directory, "index.html"), page(homeHtml));
+		await mkdir(join(directory, "about"));
+		await writeFile(
+			join(directory, "about/index.html"),
+			page("<h1>About page</h1><p>About copy.</p>"),
+		);
+		await writeFile(join(directory, "about.md"), "# Unrelated Markdown\n");
+		await mkdir(join(directory, "blog/example"), { recursive: true });
+		await writeFile(
+			join(directory, "blog/example/index.html"),
+			page("<h1>Example HTML</h1>"),
+		);
+		await writeFile(
+			join(directory, "blog/example.md"),
+			"# Authoritative Markdown\n",
+		);
+		await mkdir(join(directory, "blog/topic/post"), { recursive: true });
+		await writeFile(
+			join(directory, "blog/topic/post/index.html"),
+			page("<h1>Nested Example HTML</h1>"),
+		);
+		await writeFile(
+			join(directory, "blog/topic/post.md"),
+			"# Nested Authoritative Markdown\n",
+		);
+		await mkdir(join(directory, "blog/1"), { recursive: true });
+		await writeFile(
+			join(directory, "blog/1/index.html"),
+			'<!doctype html><title>Redirecting to: /blog/</title><meta http-equiv="refresh" content="0;url=/blog/">',
+		);
+
+		generateMarkdown({ clientDirectory: directory });
+
+		const home = await readFile(join(directory, "_markdown/index.md"), "utf8");
+		assert.match(home, /# Homepage/);
+		assert.match(home, /Main copy/);
+		assert.match(home, /\[link\]\(https:\/\/example\.com\)/);
+		assert.match(home, /\[Next page\]\(\/blog\/2\/\)/);
+		assert.match(home, /\[Card title\]\(\/blog\/card\/\)/);
+		assert.match(home, /Card metadata/);
+		assert.doesNotMatch(home, /## Card title/);
+		assert.doesNotMatch(
+			home,
+			/Site header|Navigation|Footer text|script text|SVG text/,
+		);
+
+		assert.equal(
+			await readFile(join(directory, "about.md"), "utf8"),
+			"# Unrelated Markdown\n",
+		);
+		assert.match(
+			await readFile(join(directory, "_markdown/about.md"), "utf8"),
+			/# About page/,
+		);
+		assert.equal(
+			await readFile(join(directory, "blog/example.md"), "utf8"),
+			"# Authoritative Markdown\n",
+		);
+		assert.equal(
+			await readFile(join(directory, "blog/topic/post.md"), "utf8"),
+			"# Nested Authoritative Markdown\n",
+		);
+		assert.equal(
+			existsSync(join(directory, "_markdown/blog/example.md")),
+			false,
+		);
+		assert.equal(
+			existsSync(join(directory, "_markdown/blog/topic/post.md")),
+			false,
+		);
+		assert.equal(existsSync(join(directory, "_markdown/blog/1.md")), false);
+	} finally {
+		await rm(directory, { recursive: true, force: true });
+	}
+});
+
+test("static discovery hints match Worker response values", async () => {
+	const { readFile } = await import("node:fs/promises");
+	const headers = await readFile(
+		new URL("../public/_headers", import.meta.url),
+		"utf8",
 	);
-	await mkdir(join(directory, "about"));
-	await writeFile(
-		join(directory, "about/index.html"),
-		page("<h1>About page</h1><p>About copy.</p>"),
-	);
-	await writeFile(join(directory, "about.md"), "# Unrelated Markdown\n");
-	await mkdir(join(directory, "blog/example"), { recursive: true });
-	await writeFile(
-		join(directory, "blog/example/index.html"),
-		page("<h1>Example HTML</h1>"),
-	);
-	await writeFile(
-		join(directory, "blog/example.md"),
-		"# Authoritative Markdown\n",
-	);
-	await mkdir(join(directory, "blog/1"), { recursive: true });
-	await writeFile(
-		join(directory, "blog/1/index.html"),
-		'<!doctype html><title>Redirecting to: /blog/</title><meta http-equiv="refresh" content="0;url=/blog/">',
+	const robots = await readFile(
+		new URL("../public/robots.txt", import.meta.url),
+		"utf8",
 	);
 
-	generateMarkdown({ clientDirectory: directory });
-
-	const home = await readFile(join(directory, "_markdown/index.md"), "utf8");
-	assert.match(home, /# Homepage/);
-	assert.match(home, /Main copy/);
-	assert.match(home, /\[link\]\(https:\/\/example\.com\)/);
-	assert.doesNotMatch(
-		home,
-		/Site header|Navigation|Footer text|script text|SVG text/,
-	);
-
-	assert.equal(
-		await readFile(join(directory, "about.md"), "utf8"),
-		"# Unrelated Markdown\n",
-	);
-	assert.match(
-		await readFile(join(directory, "_markdown/about.md"), "utf8"),
-		/# About page/,
-	);
-	assert.equal(
-		await readFile(join(directory, "blog/example.md"), "utf8"),
-		"# Authoritative Markdown\n",
-	);
-	assert.equal(existsSync(join(directory, "_markdown/blog/example.md")), false);
-	assert.equal(existsSync(join(directory, "_markdown/blog/1.md")), false);
+	assert.ok(headers.includes(`Content-Signal: ${CONTENT_SIGNAL}`));
+	assert.ok(robots.includes(`Content-Signal: ${CONTENT_SIGNAL}`));
+	assert.ok(headers.includes(`Link: ${HOME_LINK}`));
 });
 
 test("detail, listing, category, and privacy pages use separate Markdown paths", async () => {
 	const assets = createAssets({
 		"/blog/example.md": "# Authoritative\n\n日本語の本文",
+		"/product/series/example.md": "# Nested product\n\n日本語の製品情報",
 		"/_markdown/blog.md": "# Blog list\n\n一覧",
 		"/_markdown/blog/category/tech.md": "# Tech list\n\nカテゴリ",
 		"/_markdown/privacy-policy.md": "# Privacy Policy\n\n公開ポリシー",
@@ -168,6 +218,7 @@ test("detail, listing, category, and privacy pages use separate Markdown paths",
 
 	for (const [path, expected] of [
 		["/blog/example/", "# Authoritative"],
+		["/product/series/example/", "# Nested product"],
 		["/blog/", "# Blog list"],
 		["/blog/category/tech/", "# Tech list"],
 		["/privacy-policy/", "# Privacy Policy"],
@@ -187,6 +238,31 @@ test("detail, listing, category, and privacy pages use separate Markdown paths",
 		);
 		assert.match(await response.text(), new RegExp(expected), path);
 	}
+});
+
+test("failed Markdown asset candidates fall through to the next path", async () => {
+	const response = await negotiateMarkdown(
+		new Request("https://example.com/blog/example/", {
+			headers: { Accept: "text/markdown" },
+		}),
+		htmlResponse(),
+		{
+			async fetch(input) {
+				const path = new URL(
+					input instanceof Request ? input.url : input.toString(),
+				).pathname;
+				if (path === "/blog/example.md") {
+					throw new Error("static asset unavailable");
+				}
+				return new Response("# Generated fallback", {
+					headers: { "Content-Type": "text/markdown; charset=utf-8" },
+				});
+			},
+		},
+	);
+
+	assert.equal(response.status, 200);
+	assert.match(await response.text(), /# Generated fallback/);
 });
 
 test("Accept quality, wildcards, case, and q=0 select the right representation", async () => {

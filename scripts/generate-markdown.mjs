@@ -29,7 +29,6 @@ function createConverter() {
 					"script",
 					"style",
 					"svg",
-					"nav",
 					"header",
 					"footer",
 					"form",
@@ -46,7 +45,44 @@ function createConverter() {
 		},
 		replacement: () => "",
 	});
+	turndown.addRule("cardLink", {
+		filter: (node) =>
+			node.nodeName.toLowerCase() === "a" &&
+			Boolean(node.querySelector("h1, h2, h3, h4, h5, h6")),
+		replacement: (content, node) => {
+			const heading = node.querySelector("h1, h2, h3, h4, h5, h6");
+			const href = node.getAttribute("href");
+			const title = heading
+				? headingText(heading).replace(/\s+/g, " ").trim()
+				: "";
+			if (!title || !href) return content;
+
+			const label = title.replace(/[\\`*_{}\[\]()#+.!|<>~-]/g, "\\$&");
+			const destination = href.replace(/([()])/g, "\\$1");
+			const link = `[${label}](${destination})`;
+			const metadata = content
+				.replace(/(^|\n{1,2})#{1,6}[ \t]+[^\n]*(?=\n|$)/, "")
+				.trim();
+
+			return metadata ? `${link}\n\n${metadata}` : link;
+		},
+	});
 	return turndown;
+}
+
+function headingText(node) {
+	if (
+		(node.getAttribute?.("class") ?? "").includes("heading-anchor-container")
+	) {
+		return "";
+	}
+	if (node.nodeType === 3) return node.nodeValue ?? "";
+
+	let text = "";
+	for (let child = node.firstChild; child; child = child.nextSibling) {
+		text += headingText(child);
+	}
+	return text;
 }
 
 function extractMainContent(html) {
@@ -82,7 +118,7 @@ function isPageKey(key) {
 }
 
 function isDetailKey(key) {
-	return /^(?:blog|product)\/[^/]+$/.test(key);
+	return /^(?:blog|product)\/.+$/.test(key);
 }
 
 function resolveClientDirectory(directory) {

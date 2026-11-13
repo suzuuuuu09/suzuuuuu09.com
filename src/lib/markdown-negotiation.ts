@@ -97,7 +97,7 @@ export function isContentPage(pathname: string): boolean {
 }
 
 function isDetailKey(key: string): boolean {
-	return /^(?:blog|product)\/[^/]+$/.test(key);
+	return /^(?:blog|product)\/.+$/.test(key);
 }
 
 function markdownCandidates(pathname: string): string[] {
@@ -193,8 +193,12 @@ async function fetchMarkdown(
 			method: "GET",
 			headers,
 		});
-		const response = await assets.fetch(assetRequest);
-		if (response.status === 200) return response;
+		try {
+			const response = await assets.fetch(assetRequest);
+			if (response.status === 200) return response;
+		} catch {
+			continue;
+		}
 	}
 	return null;
 }
