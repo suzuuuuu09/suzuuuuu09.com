@@ -11,7 +11,7 @@ import Navigation from "./Navigation";
 export const NAVIGATION_LINKS: NavigationLink[] = [
 	{ href: "/about", label: "About" },
 	{ href: "/product", label: "Products" },
-	{ href: "/blog/1/", sectionPath: "/blog", label: "Blogs" },
+	{ href: "/blog/", sectionPath: "/blog", label: "Blogs" },
 ];
 
 const currentSection = getCurrentSection(Astro.url.pathname, NAVIGATION_LINKS);

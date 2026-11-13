@@ -17,6 +17,9 @@ export async function getStaticPaths() {
 }
 
 const { currentPage } = Astro.props;
+if (currentPage === 1) {
+	return Astro.redirect("/blog/", 301);
+}
 ---
 
 <BlogListing currentPage={currentPage} />

@@ -1,3 +1,5 @@
 ---
-return Astro.redirect("/blog/1/");
+import BlogListing from "@/components/features/blog/BlogListing.astro";
 ---
+
+<BlogListing currentPage={1} />

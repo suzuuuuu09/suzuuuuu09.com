@@ -42,6 +42,8 @@ export default defineConfig({
 
 	integrations: [
 		sitemap({
+			filter: (page) =>
+				!/\/blog\/(?:category\/[^/]+\/)?1\/$/.test(new URL(page).pathname),
 			i18n: {
 				defaultLocale: "ja",
 				locales: {

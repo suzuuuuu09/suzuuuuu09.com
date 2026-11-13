@@ -18,8 +18,8 @@ export async function getStaticPaths() {
 }
 
 const { category, currentPage } = Astro.props;
-if (Astro.params.page === undefined) {
-	return Astro.redirect(`/blog/category/${category}/1/`);
+if (Astro.params.page === "1") {
+	return Astro.redirect(`/blog/category/${category}/`, 301);
 }
 ---
 

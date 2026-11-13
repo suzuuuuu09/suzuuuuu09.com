@@ -5,7 +5,7 @@ assert(["http:", "https:"].includes(base.protocol), "Expected an HTTP URL");
 
 for (const [path, type, japanese] of [
 	["/", "text/html"],
-	["/blog/1/", "text/html"],
+	["/blog/", "text/html"],
 	["/blog/markdown-guide/", "text/html"],
 	["/product/", "text/html"],
 	["/rss.xml", "xml"],
@@ -78,3 +78,15 @@ for (const collection of ["blog", "product"]) {
 	}
 }
 console.log("OK draft fixture routes (404)");
+
+for (const [path, location] of [
+	["/blog/1/", "/blog/"],
+	["/blog/category/tech/1/", "/blog/category/tech/"],
+]) {
+	const response = await fetch(new URL(path, base), {
+		redirect: "manual",
+		signal: AbortSignal.timeout(15_000),
+	});
+	assert.equal(response.status, 301, path);
+	assert.equal(response.headers.get("location"), location, path);
+}

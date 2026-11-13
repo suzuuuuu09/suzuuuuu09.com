@@ -39,7 +39,7 @@ const filters = ["all", "tech", "idea", "work", "private"];
     class={css({ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "3", mb: "8" })}
   >
     {filters.map((filter) => (
-      <Button data-blog-filter={filter} href={filter === "all" ? "/blog/1/" : `/blog/category/${filter}/1/`} aria-current={filter === category ? "page" : undefined}>
+      <Button data-blog-filter={filter} href={filter === "all" ? "/blog/" : `/blog/category/${filter}/`} aria-current={filter === category ? "page" : undefined}>
         {filter === "all" ? "All" : filter[0].toUpperCase() + filter.slice(1)}
       </Button>
     ))}
@@ -69,7 +69,6 @@ const filters = ["all", "tech", "idea", "work", "private"];
             <div data-blog-pagination>
             <CollectionPagination
               basePath={basePath}
-              firstPageHref={`${basePath}1/`}
               count={totalPosts}
               label="ブログ"
               page={currentPage}
