@@ -9,7 +9,7 @@
 
 ## 実装
 
-- ホームでは `/llms.txt` を `rel="describedby"` のLinkヘッダーで案内する。`robots.txt` とHTTPレスポンスには同じContent Signalsを付ける。
+- ホームでは `/llms.txt` を `rel="describedby"` のLinkヘッダーで案内する。`robots.txt` と公開HTML/MarkdownページのHTTPレスポンスには同じContent Signalsを付ける。
 - 公開HTMLページのMarkdown版をビルド時に生成する。記事・制作物の既存Markdownを再利用し、リクエストごとのHTML変換は行わない。
 - Workerは `Accept` に応じてHTMLまたは静的Markdownを返す。HTMLを既定とし、q値と `text/markdown;q=0` を扱う。画像・CSS・JS・既存APIは交渉対象外とする。
 - 同じURLでHTMLとMarkdownを返すため、両方に `Vary: Accept` を付け、Cloudflare CDNでは `no-store` にする。これによりAcceptの異なる本文が同じCDNキャッシュ項目に混ざらない。HTMLのブラウザー向け `Cache-Control` は維持する。CDNキャッシュを使わない分の配信影響と、本番のWorkers契約・利用枠への影響は公開前に確認する。

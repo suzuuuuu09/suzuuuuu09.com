@@ -265,6 +265,38 @@ test("failed Markdown asset candidates fall through to the next path", async () 
 	assert.match(await response.text(), /# Generated fallback/);
 });
 
+test("non-200 Markdown candidates release their response body", async () => {
+	let cancelled = false;
+	const response = await negotiateMarkdown(
+		new Request("https://example.com/blog/example/", {
+			headers: { Accept: "text/markdown" },
+		}),
+		htmlResponse(),
+		{
+			async fetch(input) {
+				const path = new URL(
+					input instanceof Request ? input.url : input.toString(),
+				).pathname;
+				if (path === "/blog/example.md") {
+					return new Response(
+						new ReadableStream({
+							cancel() {
+								cancelled = true;
+							},
+						}),
+						{ status: 404 },
+					);
+				}
+				return new Response("# Generated fallback");
+			},
+		},
+	);
+
+	assert.equal(response.status, 200);
+	assert.match(await response.text(), /# Generated fallback/);
+	assert.equal(cancelled, true);
+});
+
 test("Accept quality, wildcards, case, and q=0 select the right representation", async () => {
 	const assets = createAssets({ "/_markdown/index.md": "# Markdown" });
 	const cases: [string | null, boolean][] = [

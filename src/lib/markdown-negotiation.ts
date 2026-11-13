@@ -196,6 +196,7 @@ async function fetchMarkdown(
 		try {
 			const response = await assets.fetch(assetRequest);
 			if (response.status === 200) return response;
+			await response.body?.cancel();
 		} catch {
 			continue;
 		}
