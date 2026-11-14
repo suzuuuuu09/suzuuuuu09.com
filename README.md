@@ -58,3 +58,17 @@ pnpm run build:check
 Public CI uses synthetic content when no private checkout is present. Production builds refuse PREVIEW_DRAFTS=true and exclude drafts before content ingestion.
 
 Workers Builds production command: node scripts/build-production.mjs with SKIP_DEPENDENCY_INSTALL=1. Deployment command: env -u PORTFOLIO_CONTENT_TOKEN pnpm exec wrangler deploy --config dist/server/wrangler.json. Production-only content access credentials must never be registered in Public PR workflows. The fetch step pins the content commit and records codeSha/contentSha privately. Replays can set PORTFOLIO_CONTENT_SHA to a full content commit SHA.
+
+### Google Analytics
+
+本番の `pnpm run build` は、dotenvx 読み込み後の
+`PUBLIC_GA_TRACKING_ID` が未設定・空白・暗号化されたままの場合に失敗します。
+タグのないサイトを公開して計測が停止することを防ぐためです。
+`pnpm run build:check` は測定IDなしでも成功し、設定されていてもタグを省略します。
+
+Cloudflare Workers Builds の本番ビルド環境に、GA4 の測定IDを
+`PUBLIC_GA_TRACKING_ID` として設定してください。暗号化された設定を使う場合は、
+対応する dotenvx の復号鍵が本番ビルドで利用できることを確認してください。
+静的HTMLにタグを埋め込むため、Worker の実行時変数だけを変更しても反映されません。
+設定後は本番を再ビルドし、公開HTMLに測定ID付きの
+`googletagmanager.com/gtag/js` が含まれることと、GA のリアルタイムで受信を確認してください。
