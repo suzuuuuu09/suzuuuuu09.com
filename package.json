@@ -40,7 +40,7 @@
 		"@suzuuuuu09/astro-iconify": "^1.0.0",
 		"@types/react": "^19.2.15",
 		"@types/react-dom": "^19.2.3",
-		"astro": "^7.3.3",
+		"astro": "^7.4.7",
 		"astro-expressive-code": "^0.44.2",
 		"budoux": "^0.7.0",
 		"css-tree": "^3.2.1",
