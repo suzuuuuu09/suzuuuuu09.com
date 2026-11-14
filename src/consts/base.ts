@@ -28,6 +28,18 @@ export const R2_URL = (parsedR2Url?.toString() ?? DEFAULT_R2_URL).replace(
 // Do not render an analytics tag when dotenvx supplied an encrypted placeholder.
 const configuredGaTrackingId = process.env.PUBLIC_GA_TRACKING_ID?.trim();
 export const GA_TRACKING_ID =
-	configuredGaTrackingId && !configuredGaTrackingId.startsWith("encrypted:")
+	process.env.DISABLE_GA_TRACKING !== "1" &&
+	configuredGaTrackingId &&
+	!configuredGaTrackingId.startsWith("encrypted:")
 		? configuredGaTrackingId
 		: "";
+
+if (
+	process.env.SITE_PRODUCTION_BUILD === "1" &&
+	process.env.DISABLE_GA_TRACKING !== "1" &&
+	!GA_TRACKING_ID
+) {
+	throw new Error(
+		"Production builds require a decrypted PUBLIC_GA_TRACKING_ID. Configure it in the build environment or provide the dotenvx decryption key.",
+	);
+}

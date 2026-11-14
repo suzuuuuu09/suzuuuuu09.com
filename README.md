@@ -58,3 +58,19 @@ pnpm run build:check
 Public CI uses synthetic content when no private checkout is present. Production builds refuse PREVIEW_DRAFTS=true and exclude drafts before content ingestion.
 
 Workers Builds production command: node scripts/build-production.mjs with SKIP_DEPENDENCY_INSTALL=1. Deployment command: env -u PORTFOLIO_CONTENT_TOKEN pnpm exec wrangler deploy --config dist/server/wrangler.json. Production-only content access credentials must never be registered in Public PR workflows. The fetch step pins the content commit and records codeSha/contentSha privately. Replays can set PORTFOLIO_CONTENT_SHA to a full content commit SHA.
+
+### Google Analytics
+
+Production builds (`pnpm run build`) fail if `PUBLIC_GA_TRACKING_ID` is
+missing, empty, or still encrypted after dotenvx loads the environment. This
+prevents publishing pages without analytics. Check builds
+(`pnpm run build:check`) succeed without the ID and omit the analytics tag
+even when an ID is configured.
+
+Set the GA4 measurement ID as `PUBLIC_GA_TRACKING_ID` in the Cloudflare Workers
+Builds production environment. If the value is encrypted, make sure the
+matching dotenvx decryption key is available during the production build. The
+tag is embedded in static HTML, so changing only a Worker runtime variable
+does not update it. After configuring the ID, rebuild the site and verify that
+the published HTML includes the `googletagmanager.com/gtag/js` URL and that
+Google Analytics receives traffic in Realtime.

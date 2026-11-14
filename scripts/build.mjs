@@ -82,6 +82,7 @@ const buildEnvironment = {
 	...process.env,
 	SITE_BUILD_CACHE: cacheDirectory,
 	SITE_PRODUCTION_BUILD: "1",
+	DISABLE_GA_TRACKING: checkBuild ? "1" : "0",
 };
 delete buildEnvironment.PORTFOLIO_CONTENT_TOKEN;
 const createdFixtures = checkBuild && !existsSync(contentDirectory);
