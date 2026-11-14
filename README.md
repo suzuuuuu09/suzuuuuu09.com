@@ -61,14 +61,16 @@ Workers Builds production command: node scripts/build-production.mjs with SKIP_D
 
 ### Google Analytics
 
-本番の `pnpm run build` は、dotenvx 読み込み後の
-`PUBLIC_GA_TRACKING_ID` が未設定・空白・暗号化されたままの場合に失敗します。
-タグのないサイトを公開して計測が停止することを防ぐためです。
-`pnpm run build:check` は測定IDなしでも成功し、設定されていてもタグを省略します。
+Production builds (`pnpm run build`) fail if `PUBLIC_GA_TRACKING_ID` is
+missing, empty, or still encrypted after dotenvx loads the environment. This
+prevents publishing pages without analytics. Check builds
+(`pnpm run build:check`) succeed without the ID and omit the analytics tag
+even when an ID is configured.
 
-Cloudflare Workers Builds の本番ビルド環境に、GA4 の測定IDを
-`PUBLIC_GA_TRACKING_ID` として設定してください。暗号化された設定を使う場合は、
-対応する dotenvx の復号鍵が本番ビルドで利用できることを確認してください。
-静的HTMLにタグを埋め込むため、Worker の実行時変数だけを変更しても反映されません。
-設定後は本番を再ビルドし、公開HTMLに測定ID付きの
-`googletagmanager.com/gtag/js` が含まれることと、GA のリアルタイムで受信を確認してください。
+Set the GA4 measurement ID as `PUBLIC_GA_TRACKING_ID` in the Cloudflare Workers
+Builds production environment. If the value is encrypted, make sure the
+matching dotenvx decryption key is available during the production build. The
+tag is embedded in static HTML, so changing only a Worker runtime variable
+does not update it. After configuring the ID, rebuild the site and verify that
+the published HTML includes the `googletagmanager.com/gtag/js` URL and that
+Google Analytics receives traffic in Realtime.
