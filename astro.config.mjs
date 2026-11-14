@@ -11,6 +11,7 @@ import expressiveCode from "astro-expressive-code";
 import rehypeMermaid from "rehype-mermaid";
 import remarkFileTree from "remark-file-tree";
 import remarkMath from "remark-math";
+import { agentMarkdownIntegration } from "./scripts/generate-markdown.mjs";
 import remarkObsidian from "./src/lib/remark/remark-obsidian";
 import { unifiedCaption } from "./src/lib/satteri/caption";
 import satteriEmbedLinks from "./src/lib/satteri/embed-links/unified";
@@ -74,6 +75,7 @@ export default defineConfig({
 				forward: ["dataLayer.push"],
 			},
 		}),
+		agentMarkdownIntegration(),
 	],
 
 	image: {

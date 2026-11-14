@@ -13,6 +13,10 @@
 	Permissions-Policy: geolocation=(), microphone=(), camera=()
 	Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'
   Cache-Control: public, max-age=60, s-maxage=3600, must-revalidate
+  Content-Signal: search=yes, ai-input=yes, ai-train=no
+
+/
+  Link: </llms.txt>; rel="describedby"
 
 # Asset-specific cache policies must detach the page policy above.
 /_astro/*

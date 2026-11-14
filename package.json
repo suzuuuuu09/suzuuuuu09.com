@@ -85,6 +85,8 @@
 		"remark-parse": "^11.0.0",
 		"remark-rehype": "^11.1.2",
 		"tsx": "^4.23.13",
+		"turndown": "^7.2.5",
+		"turndown-plugin-gfm": "^1.0.2",
 		"unified": "^11.0.5",
 		"wrangler": "^4.135.0"
 	}
