@@ -67,6 +67,9 @@ prevents publishing pages without analytics. Check builds
 (`pnpm run build:check`) succeed without the ID and omit the analytics tag
 even when an ID is configured.
 
+The build script disables Wrangler's automatic `.env` loading so the Cloudflare
+adapter cannot overwrite dotenvx-decrypted values with encrypted file contents.
+
 Set the GA4 measurement ID as `PUBLIC_GA_TRACKING_ID` in the Cloudflare Workers
 Builds production environment. If the value is encrypted, make sure the
 matching dotenvx decryption key is available during the production build. The
