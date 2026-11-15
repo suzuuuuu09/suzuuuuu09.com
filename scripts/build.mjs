@@ -83,6 +83,8 @@ const buildEnvironment = {
 	SITE_BUILD_CACHE: cacheDirectory,
 	SITE_PRODUCTION_BUILD: "1",
 	DISABLE_GA_TRACKING: checkBuild ? "1" : "0",
+	// Keep Wrangler from overwriting dotenvx values with raw .env ciphertext.
+	CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: "false",
 };
 delete buildEnvironment.PORTFOLIO_CONTENT_TOKEN;
 const createdFixtures = checkBuild && !existsSync(contentDirectory);

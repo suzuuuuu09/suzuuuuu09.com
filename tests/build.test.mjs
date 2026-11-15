@@ -35,6 +35,7 @@ try {
 		let calls = 0;
 		childProcess.execFileSync = (command, forwarded, options) => {
 			assert.equal(options.env.PORTFOLIO_CONTENT_TOKEN, undefined);
+			assert.equal(options.env.CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV, "false");
 			assert.equal(
 				options.env.DISABLE_GA_TRACKING,
 				args[0] === "--check" ? "1" : "0",
