@@ -6,13 +6,15 @@ import {
 	negotiateMarkdown,
 } from "../src/lib/markdown-negotiation";
 
+function assetPath(input: string | URL | Request): string {
+	return new URL(input instanceof Request ? input.url : input.toString())
+		.pathname;
+}
+
 function createAssets(files: Record<string, string>) {
 	return {
 		async fetch(input: string | URL | Request) {
-			const path = new URL(
-				input instanceof Request ? input.url : input.toString(),
-			).pathname;
-			const body = files[path];
+			const body = files[assetPath(input)];
 			if (body === undefined) {
 				return new Response("Not found", { status: 404 });
 			}
@@ -59,11 +61,6 @@ test("homepage negotiates Markdown and annotates HTML", async () => {
 	);
 	assert.equal(await markdown.text(), "# Home\n\nMain copy");
 	assert.equal(markdown.headers.get("vary"), "Accept-Encoding, accept");
-	assert.match(markdown.headers.get("vary") ?? "", /(?:^|,\s*)accept(?:,|$)/i);
-	assert.match(
-		markdown.headers.get("vary") ?? "",
-		/(?:^|,\s*)accept-encoding(?:,|$)/i,
-	);
 	assert.equal(
 		markdown.headers.get("content-signal"),
 		"search=yes, ai-input=yes, ai-train=no",
@@ -80,12 +77,7 @@ test("homepage negotiates Markdown and annotates HTML", async () => {
 
 	assert.equal(html.status, 200);
 	assert.match(html.headers.get("content-type") ?? "", /^text\/html/);
-	assert.match(html.headers.get("vary") ?? "", /(?:^|,\s*)accept(?:,|$)/i);
 	assert.equal(html.headers.get("vary"), "Accept-Encoding, accept");
-	assert.match(
-		html.headers.get("vary") ?? "",
-		/(?:^|,\s*)accept-encoding(?:,|$)/i,
-	);
 	assert.equal(html.headers.get("cloudflare-cdn-cache-control"), "no-store");
 	assert.equal(html.headers.get("link"), '</llms.txt>; rel="describedby"');
 
@@ -164,7 +156,10 @@ test("build self-check preserves authoritative Markdown and skips redirects", as
 			'<!doctype html><title>Redirecting to: /blog/</title><meta http-equiv="refresh" content="0;url=/blog/">',
 		);
 
-		generateMarkdown({ clientDirectory: directory });
+		assert.deepEqual(generateMarkdown({ clientDirectory: directory }), {
+			generated: 3,
+			reused: 2,
+		});
 
 		const home = await readFile(join(directory, "_markdown/index.md"), "utf8");
 		assert.match(home, /# Homepage/);
@@ -270,9 +265,7 @@ test("failed Markdown asset candidates fall through to the next path", async () 
 		htmlResponse(),
 		{
 			async fetch(input) {
-				const path = new URL(
-					input instanceof Request ? input.url : input.toString(),
-				).pathname;
+				const path = assetPath(input);
 				if (path === "/blog/example.md") {
 					throw new Error("static asset unavailable");
 				}
@@ -296,9 +289,7 @@ test("non-200 Markdown candidates release their response body", async () => {
 		htmlResponse(),
 		{
 			async fetch(input) {
-				const path = new URL(
-					input instanceof Request ? input.url : input.toString(),
-				).pathname;
+				const path = assetPath(input);
 				if (path === "/blog/example.md") {
 					return new Response(
 						new ReadableStream({

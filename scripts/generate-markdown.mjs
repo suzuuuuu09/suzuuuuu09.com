@@ -14,6 +14,17 @@ import { gfm } from "turndown-plugin-gfm";
 
 const MARKDOWN_DIRECTORY = "_markdown";
 const SKIPPED_ROOTS = new Set(["_astro", "api", "~partytown"]);
+const DISCARDED_TAGS = new Set([
+	"script",
+	"style",
+	"svg",
+	"header",
+	"footer",
+	"form",
+	"button",
+	"noscript",
+	"iframe",
+]);
 
 function createConverter() {
 	const turndown = new TurndownService({
@@ -23,27 +34,9 @@ function createConverter() {
 	});
 	turndown.use(gfm);
 	turndown.addRule("discardUi", {
-		filter: (node) => {
-			const name = node.nodeName.toLowerCase();
-			if (
-				[
-					"script",
-					"style",
-					"svg",
-					"header",
-					"footer",
-					"form",
-					"button",
-					"noscript",
-					"iframe",
-				].includes(name)
-			) {
-				return true;
-			}
-			return (node.getAttribute?.("class") ?? "").includes(
-				"heading-anchor-container",
-			);
-		},
+		filter: (node) =>
+			DISCARDED_TAGS.has(node.nodeName.toLowerCase()) ||
+			(node.getAttribute?.("class") ?? "").includes("heading-anchor-container"),
 		replacement: () => "",
 	});
 	turndown.addRule("cardLink", {
@@ -81,30 +74,15 @@ function headingText(node) {
 
 function extractMainContent(html) {
 	const document = createDocument(html);
-	const refreshTags = document.querySelectorAll("meta[http-equiv]");
-	if (
-		Array.from(refreshTags).some(
-			(meta) => meta.getAttribute("http-equiv")?.toLowerCase() === "refresh",
-		)
-	) {
-		return null;
-	}
+	if (document.querySelector('meta[http-equiv="refresh" i]')) return null;
 	return document.querySelector("main#main-content");
 }
 
 function htmlFiles(directory) {
-	const files = [];
-	for (const entry of readdirSync(directory, { withFileTypes: true }).sort(
-		(a, b) => a.name.localeCompare(b.name),
-	)) {
-		const path = join(directory, entry.name);
-		if (entry.isDirectory()) {
-			files.push(...htmlFiles(path));
-		} else if (entry.isFile() && entry.name === "index.html") {
-			files.push(path);
-		}
-	}
-	return files;
+	return readdirSync(directory, { recursive: true, withFileTypes: true })
+		.filter((entry) => entry.isFile() && entry.name === "index.html")
+		.map((entry) => join(entry.parentPath, entry.name))
+		.sort((a, b) => a.localeCompare(b));
 }
 
 function pageKey(clientDirectory, file) {
@@ -134,8 +112,8 @@ export function generateMarkdown({ clientDirectory }) {
 	rmSync(markdownDirectory, { force: true, recursive: true });
 
 	const converter = createConverter();
-	const generated = [];
-	const reused = [];
+	let generated = 0;
+	let reused = 0;
 
 	for (const file of htmlFiles(clientDirectory)) {
 		const key = pageKey(clientDirectory, file);
@@ -146,7 +124,7 @@ export function generateMarkdown({ clientDirectory }) {
 		if (main === null) continue;
 
 		if (isDetailKey(key) && existsSync(join(clientDirectory, `${key}.md`))) {
-			reused.push(key);
+			reused++;
 			continue;
 		}
 
@@ -156,7 +134,7 @@ export function generateMarkdown({ clientDirectory }) {
 		const output = join(markdownDirectory, `${key || "index"}.md`);
 		mkdirSync(dirname(output), { recursive: true });
 		writeFileSync(output, `${markdown}\n`);
-		generated.push(key || "index");
+		generated++;
 	}
 
 	return { generated, reused };
@@ -169,11 +147,11 @@ export function agentMarkdownIntegration() {
 			"astro:build:done": async ({ dir, logger }) => {
 				const clientDirectory = resolveClientDirectory(fileURLToPath(dir));
 				const { generated, reused } = generateMarkdown({ clientDirectory });
-				if (generated.length === 0) {
+				if (generated === 0) {
 					throw new Error(`No Markdown pages generated in ${clientDirectory}`);
 				}
 				logger.info(
-					`Generated ${generated.length} Markdown pages; kept ${reused.length} existing article Markdown files.`,
+					`Generated ${generated} Markdown pages; kept ${reused} existing article Markdown files.`,
 				);
 			},
 		},
