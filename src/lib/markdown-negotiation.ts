@@ -1,3 +1,5 @@
+import vary from "vary";
+
 export const CONTENT_SIGNAL = "search=yes, ai-input=yes, ai-train=no";
 export const HOME_LINK = '</llms.txt>; rel="describedby"';
 
@@ -108,35 +110,15 @@ function markdownCandidates(pathname: string): string[] {
 	return [`/_markdown/${key}.md`];
 }
 
-function mergeVary(...headers: (string | null | undefined)[]): string {
-	const values: string[] = [];
-	for (const header of headers) {
-		if (!header) continue;
-		for (const entry of header.split(",")) {
-			const value = entry.trim();
-			if (!value) continue;
-			if (value === "*") return "*";
-			if (
-				!values.some(
-					(existing) => existing.toLowerCase() === value.toLowerCase(),
-				)
-			) {
-				values.push(value);
-			}
-		}
-	}
-	return values.join(", ");
-}
-
 function applyPageHeaders(
 	headers: Headers,
 	pathname: string,
 	htmlHeaders: Headers,
 ): void {
-	headers.set(
-		"Vary",
-		mergeVary(headers.get("Vary"), htmlHeaders.get("Vary"), "Accept"),
-	);
+	let varyHeader = headers.get("Vary") ?? "";
+	const htmlVary = htmlHeaders.get("Vary");
+	if (htmlVary) varyHeader = vary.append(varyHeader, htmlVary);
+	headers.set("Vary", vary.append(varyHeader, "Accept"));
 	headers.set("Content-Signal", CONTENT_SIGNAL);
 	headers.set("Cloudflare-CDN-Cache-Control", "no-store");
 	const preservedLink = htmlHeaders.get("Link");
@@ -283,8 +265,6 @@ export async function negotiateMarkdown(
 	copySecurityHeaders(headers, response.headers);
 	headers.set("Content-Type", "text/markdown; charset=utf-8");
 	headers.set("Cache-Control", "no-store");
-	headers.set("Cloudflare-CDN-Cache-Control", "no-store");
-	headers.set("Content-Signal", CONTENT_SIGNAL);
 	applyPageHeaders(headers, pathname, response.headers);
 	headers.delete("Content-Length");
 	headers.delete("Content-Encoding");

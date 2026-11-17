@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createDocument } from "@mixmark-io/domino";
 import TurndownService from "turndown";
 import { gfm } from "turndown-plugin-gfm";
 
@@ -71,25 +72,24 @@ function createConverter() {
 }
 
 function headingText(node) {
-	if (
-		(node.getAttribute?.("class") ?? "").includes("heading-anchor-container")
-	) {
-		return "";
+	const heading = node.cloneNode(true);
+	for (const anchor of heading.querySelectorAll(".heading-anchor-container")) {
+		anchor.parentNode?.removeChild(anchor);
 	}
-	if (node.nodeType === 3) return node.nodeValue ?? "";
-
-	let text = "";
-	for (let child = node.firstChild; child; child = child.nextSibling) {
-		text += headingText(child);
-	}
-	return text;
+	return heading.textContent ?? "";
 }
 
 function extractMainContent(html) {
-	if (/<meta[^>]+http-equiv=["']?refresh/i.test(html)) return null;
-	const match =
-		/<main\b[^>]*\bid=["']main-content["'][^>]*>([\s\S]*?)<\/main>/i.exec(html);
-	return match?.[1] ?? null;
+	const document = createDocument(html);
+	const refreshTags = document.querySelectorAll("meta[http-equiv]");
+	if (
+		Array.from(refreshTags).some(
+			(meta) => meta.getAttribute("http-equiv")?.toLowerCase() === "refresh",
+		)
+	) {
+		return null;
+	}
+	return document.querySelector("main#main-content");
 }
 
 function htmlFiles(directory) {

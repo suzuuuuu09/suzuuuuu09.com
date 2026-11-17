@@ -35,7 +35,7 @@ function htmlResponse(
 			"Cache-Control": "public, max-age=3600",
 			ETag: '"html-page"',
 			"X-Frame-Options": "DENY",
-			Vary: "Accept-Encoding",
+			Vary: "Accept-Encoding, accept",
 		},
 	});
 }
@@ -58,6 +58,7 @@ test("homepage negotiates Markdown and annotates HTML", async () => {
 		"text/markdown; charset=utf-8",
 	);
 	assert.equal(await markdown.text(), "# Home\n\nMain copy");
+	assert.equal(markdown.headers.get("vary"), "Accept-Encoding, accept");
 	assert.match(markdown.headers.get("vary") ?? "", /(?:^|,\s*)accept(?:,|$)/i);
 	assert.match(
 		markdown.headers.get("vary") ?? "",
@@ -80,12 +81,24 @@ test("homepage negotiates Markdown and annotates HTML", async () => {
 	assert.equal(html.status, 200);
 	assert.match(html.headers.get("content-type") ?? "", /^text\/html/);
 	assert.match(html.headers.get("vary") ?? "", /(?:^|,\s*)accept(?:,|$)/i);
+	assert.equal(html.headers.get("vary"), "Accept-Encoding, accept");
 	assert.match(
 		html.headers.get("vary") ?? "",
 		/(?:^|,\s*)accept-encoding(?:,|$)/i,
 	);
 	assert.equal(html.headers.get("cloudflare-cdn-cache-control"), "no-store");
 	assert.equal(html.headers.get("link"), '</llms.txt>; rel="describedby"');
+
+	const wildcardVary = await negotiateMarkdown(
+		new Request("https://example.com/", {
+			headers: { Accept: "text/html" },
+		}),
+		new Response("<main id='main-content'>HTML</main>", {
+			headers: { "Content-Type": "text/html", Vary: "*" },
+		}),
+		assets,
+	);
+	assert.equal(wildcardVary.headers.get("vary"), "*");
 });
 
 test("build self-check preserves authoritative Markdown and skips redirects", async () => {
@@ -120,6 +133,11 @@ test("build self-check preserves authoritative Markdown and skips redirects", as
 		await writeFile(
 			join(directory, "about/index.html"),
 			page("<h1>About page</h1><p>About copy.</p>"),
+		);
+		await mkdir(join(directory, "about/domains"), { recursive: true });
+		await writeFile(
+			join(directory, "about/domains/index.html"),
+			"<!doctype html><main data-page='about >' id='main-content'><h1>DOM extraction</h1><p>Case and attribute order.</p></main>",
 		);
 		await writeFile(join(directory, "about.md"), "# Unrelated Markdown\n");
 		await mkdir(join(directory, "blog/example"), { recursive: true });
@@ -168,6 +186,10 @@ test("build self-check preserves authoritative Markdown and skips redirects", as
 		assert.match(
 			await readFile(join(directory, "_markdown/about.md"), "utf8"),
 			/# About page/,
+		);
+		assert.equal(
+			await readFile(join(directory, "_markdown/about/domains.md"), "utf8"),
+			"# DOM extraction\n\nCase and attribute order.\n",
 		);
 		assert.equal(
 			await readFile(join(directory, "blog/example.md"), "utf8"),
