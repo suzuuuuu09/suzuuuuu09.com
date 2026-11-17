@@ -37,7 +37,7 @@ function htmlResponse(
 			"Cache-Control": "public, max-age=3600",
 			ETag: '"html-page"',
 			"X-Frame-Options": "DENY",
-			Vary: "Accept-Encoding, accept",
+			Vary: "Accept-Encoding",
 		},
 	});
 }
@@ -60,7 +60,11 @@ test("homepage negotiates Markdown and annotates HTML", async () => {
 		"text/markdown; charset=utf-8",
 	);
 	assert.equal(await markdown.text(), "# Home\n\nMain copy");
-	assert.equal(markdown.headers.get("vary"), "Accept-Encoding, accept");
+	assert.match(markdown.headers.get("vary") ?? "", /(?:^|,\s*)accept(?:,|$)/i);
+	assert.match(
+		markdown.headers.get("vary") ?? "",
+		/(?:^|,\s*)accept-encoding(?:,|$)/i,
+	);
 	assert.equal(
 		markdown.headers.get("content-signal"),
 		"search=yes, ai-input=yes, ai-train=no",
@@ -77,7 +81,11 @@ test("homepage negotiates Markdown and annotates HTML", async () => {
 
 	assert.equal(html.status, 200);
 	assert.match(html.headers.get("content-type") ?? "", /^text\/html/);
-	assert.equal(html.headers.get("vary"), "Accept-Encoding, accept");
+	assert.match(html.headers.get("vary") ?? "", /(?:^|,\s*)accept(?:,|$)/i);
+	assert.match(
+		html.headers.get("vary") ?? "",
+		/(?:^|,\s*)accept-encoding(?:,|$)/i,
+	);
 	assert.equal(html.headers.get("cloudflare-cdn-cache-control"), "no-store");
 	assert.equal(html.headers.get("link"), '</llms.txt>; rel="describedby"');
 
