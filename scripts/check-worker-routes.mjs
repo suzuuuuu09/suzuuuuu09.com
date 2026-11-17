@@ -11,6 +11,8 @@ function fetchRoute(path, init = {}) {
 	});
 }
 
+let htmlEtag;
+
 for (const [path, type, japanese] of [
 	["/", "text/html"],
 	["/blog/", "text/html"],
@@ -62,57 +64,54 @@ for (const [path, type, japanese] of [
 		assert.match(await response.text(), /<urlset\b/i, "Sitemap URL set");
 	}
 	if (path === "/") {
-		assert(
-			(await response.text()).includes('id="activity"'),
-			"Activity section",
+		htmlEtag = response.headers.get("etag");
+		assert(htmlEtag, "Home HTML ETag");
+		assert.equal(
+			response.headers.get("link"),
+			'</llms.txt>; rel="describedby"',
+			"Home describedby Link",
 		);
+		assert.match(
+			response.headers.get("vary") ?? "",
+			/(?:^|,\s*)accept(?:,|$)/i,
+			"Home HTML Vary",
+		);
+		assert.equal(
+			response.headers.get("cloudflare-cdn-cache-control"),
+			"no-store",
+			"Home HTML CDN cache",
+		);
+		assert.equal(
+			response.headers.get("content-signal"),
+			"search=yes, ai-input=yes, ai-train=no",
+			"Home Content-Signal",
+		);
+		assert.equal(
+			response.headers.get("x-robots-tag"),
+			null,
+			"Home is indexable",
+		);
+		const homeHtmlBody = await response.text();
+		assert(homeHtmlBody.includes('id="activity"'), "Activity section");
 		assert.equal(response.headers.get("x-frame-options"), "DENY");
+		assert.doesNotMatch(
+			homeHtmlBody,
+			/<meta\s+name=["']robots["'][^>]*noindex/i,
+		);
+		const jsonLd = homeHtmlBody.match(
+			/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i,
+		);
+		assert(jsonLd, "Home Person JSON-LD");
+		const person = JSON.parse(jsonLd[1]);
+		assert.equal(person["@type"], "Person");
+		assert.equal(person.name, "suzu");
+		assert.equal(person.url, "https://suzuuuuu09.com/");
+		assert(person.knowsAbout.includes("Web development"));
+		assert(person.sameAs.includes("https://github.com/suzuuuuu09"));
+		console.log("OK / (default HTML, Person JSON-LD and negotiation headers)");
 	}
 	console.log(`OK ${path}`);
 }
-
-const homeHtml = await fetchRoute("/", {
-	headers: { Accept: "text/html" },
-});
-assert.equal(homeHtml.status, 200, "Home HTML status");
-assert.equal(
-	homeHtml.headers.get("link"),
-	'</llms.txt>; rel="describedby"',
-	"Home describedby Link",
-);
-assert.match(
-	homeHtml.headers.get("vary") ?? "",
-	/(?:^|,\s*)accept(?:,|$)/i,
-	"Home HTML Vary",
-);
-assert.equal(
-	homeHtml.headers.get("cloudflare-cdn-cache-control"),
-	"no-store",
-	"Home HTML CDN cache",
-);
-assert.equal(
-	homeHtml.headers.get("content-signal"),
-	"search=yes, ai-input=yes, ai-train=no",
-	"Home Content-Signal",
-);
-assert.equal(homeHtml.headers.get("x-robots-tag"), null, "Home is indexable");
-const homeHtmlBody = await homeHtml.text();
-assert.doesNotMatch(homeHtmlBody, /<meta\s+name=["']robots["'][^>]*noindex/i);
-const jsonLd = homeHtmlBody.match(
-	/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i,
-);
-assert(jsonLd, "Home Person JSON-LD");
-const person = JSON.parse(jsonLd[1]);
-assert.equal(person["@type"], "Person");
-assert.equal(person.name, "suzu");
-assert.equal(person.url, "https://suzuuuuu09.com/");
-assert(person.knowsAbout.includes("Web development"));
-assert(person.sameAs.includes("https://github.com/suzuuuuu09"));
-console.log("OK / (Person JSON-LD and indexable HTML)");
-console.log("OK / (HTML negotiation headers)");
-
-const htmlEtag = homeHtml.headers.get("etag");
-assert(htmlEtag, "Home HTML ETag");
 
 const validatedHtml = await fetchRoute("/", {
 	headers: { Accept: "text/html", "If-None-Match": htmlEtag },
